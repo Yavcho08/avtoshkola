@@ -175,6 +175,7 @@ export interface AdminDashboardStats {
   totalInstructors: number;
   activeInstructors: number;
   totalVehicles: number;
+  activeVehicles: number;
   monthlyRevenue: number;
   monthlyExpenses: number;
   upcomingExams: number;

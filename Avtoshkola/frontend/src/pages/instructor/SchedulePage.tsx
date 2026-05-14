@@ -1,6 +1,8 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { lessonsApi } from '../../api/lessons.api';
-import { LessonWithRelations } from '../../types';
+import { studentsApi } from '../../api/students.api';
+import { vehiclesApi } from '../../api/vehicles.api';
+import { LessonWithRelations, StudentWithProfile, VehicleWithCategory } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Badge } from '../../components/common/Badge';
@@ -15,6 +17,8 @@ function fmtDateTime(iso: string) {
 
 export default function InstructorSchedulePage() {
   const [lessons, setLessons] = useState<LessonWithRelations[]>([]);
+  const [students, setStudents] = useState<StudentWithProfile[]>([]);
+  const [vehicles, setVehicles] = useState<VehicleWithCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('scheduled');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -29,14 +33,26 @@ export default function InstructorSchedulePage() {
 
   const [notesForm, setNotesForm] = useState({ instructor_notes: '', grade: '', status: 'completed' });
 
-  const load = () => {
+  const load = async () => {
     setIsLoading(true);
-    lessonsApi.list({ status: statusFilter || undefined, limit: 50 })
-      .then(res => setLessons(res.data))
-      .finally(() => setIsLoading(false));
+    try {
+      const [lessonsRes, studentsRes, vehiclesRes] = await Promise.all([
+        lessonsApi.list({ status: statusFilter || undefined, limit: 50 }),
+        studentsApi.list({ limit: 500 }),
+        vehiclesApi.list({ limit: 500 }),
+      ]);
+      setLessons(lessonsRes.data);
+      setStudents(studentsRes.data);
+      setVehicles(vehiclesRes.data);
+      if (studentsRes.data.length > 0 && !createForm.student_id) {
+        setCreateForm(f => ({ ...f, student_id: studentsRes.data[0].id }));
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  useEffect(() => { load(); }, [statusFilter]);
+  useEffect(() => { void load(); }, [statusFilter]);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -135,8 +151,21 @@ export default function InstructorSchedulePage() {
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Ново занятие">
         <form onSubmit={handleCreate} className="space-y-4">
           {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{formError}</p>}
-          <Input label="ID на студент" value={createForm.student_id} onChange={e => setCreateForm(f => ({ ...f, student_id: e.target.value }))} required />
-          <Input label="ID на МПС (незадължително)" value={createForm.vehicle_id} onChange={e => setCreateForm(f => ({ ...f, vehicle_id: e.target.value }))} />
+          <div>
+            <label className="text-sm font-medium text-gray-700">Студент</label>
+            <select value={createForm.student_id} onChange={e => setCreateForm(f => ({ ...f, student_id: e.target.value }))}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+              {students.map(s => <option key={s.id} value={s.id}>{s.profiles.first_name} {s.profiles.last_name} ({s.egn})</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700">МПС (незадължително)</label>
+            <select value={createForm.vehicle_id} onChange={e => setCreateForm(f => ({ ...f, vehicle_id: e.target.value }))}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+              <option value="">-- Без МПС --</option>
+              {vehicles.map(v => <option key={v.id} value={v.id}>{v.registration_number} - {v.make} {v.model}</option>)}
+            </select>
+          </div>
           <div>
             <label className="text-sm font-medium text-gray-700">Тип</label>
             <select value={createForm.type} onChange={e => setCreateForm(f => ({ ...f, type: e.target.value }))}

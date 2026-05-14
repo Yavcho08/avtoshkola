@@ -60,13 +60,13 @@ export const create = async (req: Request, res: Response): Promise<void> => {
 
   const userId = authData.user.id;
 
-  const { error: profileError } = await supabase.from('profiles').insert({
+  const { error: profileError } = await supabase.from('profiles').upsert({
     id: userId,
     role: 'instructor',
     first_name,
     last_name,
     phone: phone ?? null,
-  } satisfies ProfileInsert);
+  });
 
   if (profileError) {
     await supabase.auth.admin.deleteUser(userId);

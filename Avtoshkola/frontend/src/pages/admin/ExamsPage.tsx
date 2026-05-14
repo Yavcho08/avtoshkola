@@ -1,6 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { examsApi } from '../../api/exams.api';
-import { ExamWithStudent } from '../../types';
+import { studentsApi } from '../../api/students.api';
+import { ExamWithStudent, StudentWithProfile } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Badge } from '../../components/common/Badge';
@@ -16,6 +17,7 @@ const EXAM_TYPE_LABELS: Record<string, string> = {
 
 export default function AdminExamsPage() {
   const [exams, setExams] = useState<ExamWithStudent[]>([]);
+  const [students, setStudents] = useState<StudentWithProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('scheduled');
@@ -26,14 +28,24 @@ export default function AdminExamsPage() {
   const [createForm, setCreateForm] = useState({ student_id: '', type: 'internal_theory', exam_date: '' });
   const [resultForm, setResultForm] = useState({ status: 'passed', score: '' });
 
-  const load = () => {
+  const load = async () => {
     setIsLoading(true);
-    examsApi.list({ type: typeFilter || undefined, status: statusFilter || undefined, limit: 50 })
-      .then(res => setExams(res.data))
-      .finally(() => setIsLoading(false));
+    try {
+      const [examsRes, studentsRes] = await Promise.all([
+        examsApi.list({ type: typeFilter || undefined, status: statusFilter || undefined, limit: 50 }),
+        studentsApi.list({ limit: 500 }),
+      ]);
+      setExams(examsRes.data);
+      setStudents(studentsRes.data);
+      if (studentsRes.data.length > 0 && !createForm.student_id) {
+        setCreateForm(f => ({ ...f, student_id: studentsRes.data[0].id }));
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  useEffect(() => { load(); }, [typeFilter, statusFilter]);
+  useEffect(() => { void load(); }, [typeFilter, statusFilter]);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -120,7 +132,13 @@ export default function AdminExamsPage() {
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Нов изпит">
         <form onSubmit={handleCreate} className="space-y-4">
           {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{formError}</p>}
-          <Input label="ID на студент" value={createForm.student_id} onChange={e => setCreateForm(f => ({ ...f, student_id: e.target.value }))} required hint="UUID от таблица students" />
+          <div>
+            <label className="text-sm font-medium text-gray-700">Студент</label>
+            <select value={createForm.student_id} onChange={e => setCreateForm(f => ({ ...f, student_id: e.target.value }))}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+              {students.map(s => <option key={s.id} value={s.id}>{s.profiles.first_name} {s.profiles.last_name} ({s.egn})</option>)}
+            </select>
+          </div>
           <div>
             <label className="text-sm font-medium text-gray-700">Тип изпит</label>
             <select value={createForm.type} onChange={e => setCreateForm(f => ({ ...f, type: e.target.value }))}

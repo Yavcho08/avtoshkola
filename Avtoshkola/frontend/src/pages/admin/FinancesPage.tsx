@@ -1,7 +1,8 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { paymentsApi } from '../../api/payments.api';
 import { expensesApi } from '../../api/expenses.api';
-import { PaymentWithStudent, Expense } from '../../types';
+import { studentsApi } from '../../api/students.api';
+import { PaymentWithStudent, Expense, StudentWithProfile } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Badge } from '../../components/common/Badge';
@@ -30,6 +31,7 @@ export default function AdminFinancesPage() {
   const [tab, setTab] = useState<Tab>('payments');
   const [payments, setPayments] = useState<PaymentWithStudent[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [students, setStudents] = useState<StudentWithProfile[]>([]);
   const [summary, setSummary] = useState<Awaited<ReturnType<typeof paymentsApi.getSummary>> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -42,14 +44,19 @@ export default function AdminFinancesPage() {
   const load = async () => {
     setIsLoading(true);
     try {
-      const [paymentsRes, expensesRes, summaryRes] = await Promise.all([
+      const [paymentsRes, expensesRes, summaryRes, studentsRes] = await Promise.all([
         paymentsApi.list({ limit: 50 }),
         expensesApi.list({ limit: 50 }),
         paymentsApi.getSummary(),
+        studentsApi.list({ limit: 500 }),
       ]);
       setPayments(paymentsRes.data);
       setExpenses(expensesRes.data);
       setSummary(summaryRes);
+      setStudents(studentsRes.data);
+      if (studentsRes.data.length > 0 && !paymentForm.student_id) {
+        setPaymentForm(f => ({ ...f, student_id: studentsRes.data[0].id }));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -72,6 +79,7 @@ export default function AdminFinancesPage() {
       const created = await paymentsApi.create({ ...paymentForm, amount: Number(paymentForm.amount) });
       setPayments(prev => [created, ...prev]);
       setIsPaymentModalOpen(false);
+      setPaymentForm(f => ({ ...f, amount: '', due_date: '' }));
     } catch (err) { setFormError(extractErrorMessage(err)); }
     finally { setIsSaving(false); }
   };
@@ -84,6 +92,7 @@ export default function AdminFinancesPage() {
       const created = await expensesApi.create({ ...expenseForm, amount: Number(expenseForm.amount), category: expenseForm.category as never });
       setExpenses(prev => [created, ...prev]);
       setIsExpenseModalOpen(false);
+      setExpenseForm(f => ({ ...f, description: '', amount: '', expense_date: '' }));
     } catch (err) { setFormError(extractErrorMessage(err)); }
     finally { setIsSaving(false); }
   };
@@ -177,7 +186,13 @@ export default function AdminFinancesPage() {
       <Modal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} title="Ново плащане">
         <form onSubmit={handleCreatePayment} className="space-y-4">
           {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{formError}</p>}
-          <Input label="ID на студент" value={paymentForm.student_id} onChange={e => setPaymentForm(f => ({ ...f, student_id: e.target.value }))} required />
+          <div>
+            <label className="text-sm font-medium text-gray-700">Студент</label>
+            <select value={paymentForm.student_id} onChange={e => setPaymentForm(f => ({ ...f, student_id: e.target.value }))}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+              {students.map(s => <option key={s.id} value={s.id}>{s.profiles.first_name} {s.profiles.last_name} ({s.egn})</option>)}
+            </select>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Сума (лв.)" type="number" step="0.01" value={paymentForm.amount} onChange={e => setPaymentForm(f => ({ ...f, amount: e.target.value }))} required />
             <Input label="Падеж" type="date" value={paymentForm.due_date} onChange={e => setPaymentForm(f => ({ ...f, due_date: e.target.value }))} required />

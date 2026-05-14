@@ -81,13 +81,13 @@ export const create = async (req: Request, res: Response): Promise<void> => {
   const userId = authData.user.id;
 
   // 2 — Create profile
-  const { error: profileError } = await supabase.from('profiles').insert({
+  const { error: profileError } = await supabase.from('profiles').upsert({
     id: userId,
     role: 'student',
     first_name,
     last_name,
     phone: phone ?? null,
-  } satisfies ProfileInsert);
+  });
 
   if (profileError) {
     await supabase.auth.admin.deleteUser(userId);

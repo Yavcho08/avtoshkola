@@ -9,7 +9,7 @@ const router = Router();
 router.use(authenticate);
 
 // Collection
-router.get('/',    requireAdmin,              wrap(students.list));
+router.get('/',    requireAdminOrInstructor,  wrap(students.list));
 router.post('/',   requireAdmin,              wrap(students.create));
 
 // Per-student (admin, assigned instructor, or the student themselves — enforced in controller)

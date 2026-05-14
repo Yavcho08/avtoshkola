@@ -1,6 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { vehiclesApi } from '../../api/vehicles.api';
-import { VehicleWithCategory } from '../../types';
+import { categoriesApi } from '../../api/categories.api';
+import { VehicleWithCategory, Category } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Badge } from '../../components/common/Badge';
@@ -23,6 +24,7 @@ function daysUntil(dateStr: string) {
 export default function AdminVehiclesPage() {
   const [vehicles, setVehicles] = useState<VehicleWithCategory[]>([]);
   const [expiring, setExpiring] = useState<ExpiringVehicle[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formError, setFormError] = useState('');
@@ -35,12 +37,17 @@ export default function AdminVehiclesPage() {
   const load = async () => {
     setIsLoading(true);
     try {
-      const [listRes, expiringRes] = await Promise.all([
+      const [listRes, expiringRes, catRes] = await Promise.all([
         vehiclesApi.list({ limit: 100 }),
         vehiclesApi.getExpiring(60),
+        categoriesApi.list(),
       ]);
       setVehicles(listRes.data);
       setExpiring(expiringRes);
+      setCategories(catRes);
+      if (catRes.length > 0) {
+        setForm(f => ({ ...f, category_id: catRes[0].id }));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +63,7 @@ export default function AdminVehiclesPage() {
       const created = await vehiclesApi.create(form);
       setVehicles(prev => [...prev, created]);
       setIsModalOpen(false);
-      setForm({ registration_number: '', make: '', model: '', category_id: '', technical_inspection_date: '' });
+      setForm({ registration_number: '', make: '', model: '', category_id: categories[0]?.id ?? '', technical_inspection_date: '' });
     } catch (err) {
       setFormError(extractErrorMessage(err));
     } finally {
@@ -162,7 +169,13 @@ export default function AdminVehiclesPage() {
             <Input label="Марка" value={form.make} onChange={e => setForm(f => ({ ...f, make: e.target.value }))} required />
             <Input label="Модел" value={form.model} onChange={e => setForm(f => ({ ...f, model: e.target.value }))} required />
           </div>
-          <Input label="ID на категория" value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))} hint="UUID от таблица categories" required />
+          <div>
+            <label className="text-sm font-medium text-gray-700">Категория</label>
+            <select value={form.category_id} onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
           <Input label="ГТП (срок)" type="date" value={form.technical_inspection_date} onChange={e => setForm(f => ({ ...f, technical_inspection_date: e.target.value }))} required />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>Отказ</Button>

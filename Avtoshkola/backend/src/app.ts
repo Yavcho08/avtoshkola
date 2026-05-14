@@ -5,7 +5,7 @@ import morgan from 'morgan';
 import { ApiResponse } from './types';
 
 // ─── Import type augmentation so req.user is visible project-wide ─────────────
-import './types/express.d';
+// Type augmentations are picked up automatically via tsconfig include.
 
 const app: Application = express();
 
@@ -42,6 +42,7 @@ import vehiclesRouter from './routes/vehicles.routes';
 import paymentsRouter from './routes/payments.routes';
 import expensesRouter from './routes/expenses.routes';
 import dashboardRouter from './routes/dashboard.routes';
+import categoriesRouter from './routes/categories.routes';
 
 app.use('/api/auth',        authRouter);
 app.use('/api/students',    studentsRouter);
@@ -52,6 +53,7 @@ app.use('/api/vehicles',    vehiclesRouter);
 app.use('/api/payments',    paymentsRouter);
 app.use('/api/expenses',    expensesRouter);
 app.use('/api/dashboard',   dashboardRouter);
+app.use('/api/categories',  categoriesRouter);
 
 // ─── 404 Catch-all ────────────────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {

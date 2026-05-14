@@ -81,22 +81,24 @@ export const list = async (req: Request, res: Response): Promise<void> => {
 
 // POST /api/lessons  (admin or instructor)
 export const create = async (req: Request, res: Response): Promise<void> => {
-  const { student_id, instructor_id, vehicle_id, type, start_time, end_time } = req.body;
+  let { student_id, instructor_id, vehicle_id, type, start_time, end_time } = req.body;
+
+  // Instructors can only create lessons for themselves
+  if (req.user!.role === 'instructor') {
+    const { data: self } = await supabase
+      .from('instructors').select('id').eq('profile_id', req.user!.id).single();
+    if (!instructor_id && self) {
+      instructor_id = self.id;
+    } else if (self?.id !== instructor_id) {
+      sendError(res, 'Instructors can only schedule their own lessons.', 403); return;
+    }
+  }
 
   if (!student_id || !instructor_id || !type || !start_time || !end_time) {
     sendError(res, 'student_id, instructor_id, type, start_time and end_time are required.', 422); return;
   }
   if (new Date(end_time) <= new Date(start_time)) {
     sendError(res, 'end_time must be after start_time.', 422); return;
-  }
-
-  // Instructors can only create lessons for themselves
-  if (req.user!.role === 'instructor') {
-    const { data: self } = await supabase
-      .from('instructors').select('id').eq('profile_id', req.user!.id).single();
-    if (self?.id !== instructor_id) {
-      sendError(res, 'Instructors can only schedule their own lessons.', 403); return;
-    }
   }
 
   const conflict = await detectConflict(instructor_id, student_id, start_time, end_time, vehicle_id);
