@@ -1,0 +1,43 @@
+import { Outlet, useLocation } from 'react-router-dom';
+import { Sidebar } from './Sidebar';
+import { Header } from './Header';
+import { useAuth } from '../../hooks/useAuth';
+import { UserRole } from '../../types';
+
+const PAGE_TITLES: Record<string, string> = {
+  '/admin':             'Табло',
+  '/admin/students':    'Студенти',
+  '/admin/instructors': 'Инструктори',
+  '/admin/vehicles':    'Превозни средства',
+  '/admin/exams':       'Изпити',
+  '/admin/finances':    'Финанси',
+  '/instructor':        'Табло',
+  '/instructor/schedule': 'График',
+  '/student':           'Табло',
+  '/student/schedule':  'График',
+  '/student/payments':  'Плащания',
+};
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  admin: 'Администратор',
+  instructor: 'Инструктор',
+  student: 'Студент',
+};
+
+export function AppLayout() {
+  const { pathname } = useLocation();
+  const { user } = useAuth();
+  const title = PAGE_TITLES[pathname] ?? (user ? ROLE_LABELS[user.role] : '');
+
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <Header title={title} />
+        <main className="flex-1 overflow-y-auto p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
