@@ -1,13 +1,30 @@
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState, FormEvent, useMemo } from 'react';
+import { Calendar, dateFnsLocalizer, Event } from 'react-big-calendar';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { bg } from 'date-fns/locale/bg';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+
 import { lessonsApi } from '../../api/lessons.api';
 import { studentsApi } from '../../api/students.api';
 import { vehiclesApi } from '../../api/vehicles.api';
-import { LessonWithRelations, StudentWithProfile, VehicleWithCategory } from '../../types';
+import { LessonWithRelations, StudentWithProfile, VehicleWithCategory, StudentProgressSummary } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
 import { Spinner } from '../../components/common/Spinner';
 import { extractErrorMessage } from '../../api/client';
+
+const locales = {
+  'bg-BG': bg,
+};
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek: () => startOfWeek(new Date(), { weekStartsOn: 1 }),
+  getDay,
+  locales,
+});
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('bg-BG', { day: 'numeric', month: 'short' });
@@ -27,27 +44,6 @@ const TYPE_CONFIG: Record<string, { label: string; bg: string; text: string }> =
   practice: { label: 'Практика', bg: 'bg-blue-100',   text: 'text-blue-700'   },
 };
 
-const STATUS_FILTERS = [
-  { value: 'scheduled', label: 'Насрочени' },
-  { value: 'completed', label: 'Завършени' },
-  { value: 'cancelled', label: 'Отказани'  },
-  { value: '',          label: 'Всички'    },
-];
-
-function EmptyLessons() {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="h-16 w-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-4">
-        <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      </div>
-      <p className="text-gray-500 font-medium">Няма намерени занятия</p>
-      <p className="text-gray-400 text-sm mt-1">Опитайте с различен филтър</p>
-    </div>
-  );
-}
-
 const selectCls = 'block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent';
 
 export default function InstructorSchedulePage() {
@@ -55,11 +51,12 @@ export default function InstructorSchedulePage() {
   const [students, setStudents] = useState<StudentWithProfile[]>([]);
   const [vehicles, setVehicles] = useState<VehicleWithCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('scheduled');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [notesModal, setNotesModal] = useState<LessonWithRelations | null>(null);
+  const [lessonDetailsModal, setLessonDetailsModal] = useState<LessonWithRelations | null>(null);
   const [formError, setFormError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [studentProgress, setStudentProgress] = useState<StudentProgressSummary | null>(null);
 
   const [createForm, setCreateForm] = useState({
     student_id: '', vehicle_id: '', type: 'practice', start_time: '', end_time: '',
@@ -70,7 +67,7 @@ export default function InstructorSchedulePage() {
     setIsLoading(true);
     try {
       const [lessonsRes, studentsRes, vehiclesRes] = await Promise.all([
-        lessonsApi.list({ status: statusFilter || undefined, limit: 50 }),
+        lessonsApi.list({ limit: 500 }), // Load a larger limit for calendar
         studentsApi.list({ limit: 500 }),
         vehiclesApi.list({ limit: 500 }),
       ]);
@@ -85,7 +82,15 @@ export default function InstructorSchedulePage() {
     }
   };
 
-  useEffect(() => { void load(); }, [statusFilter]);
+  useEffect(() => { void load(); }, []);
+
+  useEffect(() => {
+    if (createForm.student_id) {
+      studentsApi.getProgress(createForm.student_id).then(setStudentProgress).catch(console.error);
+    } else {
+      setStudentProgress(null);
+    }
+  }, [createForm.student_id]);
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -115,6 +120,9 @@ export default function InstructorSchedulePage() {
       });
       setLessons(prev => prev.map(l => l.id === updated.id ? updated : l));
       setNotesModal(null);
+      if (lessonDetailsModal && lessonDetailsModal.id === updated.id) {
+        setLessonDetailsModal(updated);
+      }
     } finally { setIsSaving(false); }
   };
 
@@ -122,12 +130,34 @@ export default function InstructorSchedulePage() {
     try {
       await lessonsApi.cancel(id);
       setLessons(prev => prev.map(l => l.id === id ? { ...l, status: 'cancelled' } : l));
+      if (lessonDetailsModal && lessonDetailsModal.id === id) {
+        setLessonDetailsModal(prev => prev ? { ...prev, status: 'cancelled' } : null);
+      }
     } catch { /* noop */ }
   };
 
-  return (
-    <div className="space-y-5 max-w-5xl">
+  const events: Event[] = useMemo(() => {
+    return lessons.map(l => ({
+      id: l.id,
+      title: `${l.students?.profiles?.first_name} ${l.students?.profiles?.last_name} (${TYPE_CONFIG[l.type]?.label})`,
+      start: new Date(l.start_time),
+      end: new Date(l.end_time),
+      resource: l,
+    }));
+  }, [lessons]);
 
+  const eventPropGetter = (event: Event) => {
+    const l = event.resource as LessonWithRelations;
+    let backgroundColor = '#3b82f6'; // default practice
+    if (l.type === 'theory') backgroundColor = '#8b5cf6'; // theory
+    if (l.status === 'cancelled') backgroundColor = '#f87171'; // cancelled
+    if (l.status === 'completed') backgroundColor = '#34d399'; // completed
+
+    return { style: { backgroundColor, borderRadius: '4px', border: 'none', display: 'block' } };
+  };
+
+  return (
+    <div className="space-y-5">
       {/* Header row */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
@@ -135,21 +165,6 @@ export default function InstructorSchedulePage() {
           <p className="text-sm text-gray-500 mt-0.5">Управление на всички занятия</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Filter pills */}
-          <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
-            {STATUS_FILTERS.map(f => (
-              <button
-                key={f.value}
-                onClick={() => setStatusFilter(f.value)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150
-                  ${statusFilter === f.value
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
           <button
             onClick={() => setIsCreateOpen(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:scale-95 transition-all duration-150 shadow-lg shadow-blue-600/25"
@@ -162,102 +177,94 @@ export default function InstructorSchedulePage() {
         </div>
       </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="flex justify-center py-20"><Spinner className="h-7 w-7 text-primary-600" /></div>
-      ) : lessons.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-          <EmptyLessons />
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {lessons.map(l => {
-            const typeConf = TYPE_CONFIG[l.type] ?? { label: l.type, bg: 'bg-gray-100', text: 'text-gray-600' };
-            const statusConf = STATUS_CONFIG[l.status] ?? { label: l.status, dot: 'bg-gray-400' };
-            const duration = Math.round((new Date(l.end_time).getTime() - new Date(l.start_time).getTime()) / 60000);
+      {/* Calendar */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5" style={{ height: '700px' }}>
+        {isLoading ? (
+          <div className="flex h-full items-center justify-center"><Spinner className="h-7 w-7 text-primary-600" /></div>
+        ) : (
+          <Calendar
+            localizer={localizer}
+            events={events}
+            startAccessor="start"
+            endAccessor="end"
+            culture="bg-BG"
+            messages={{
+              next: "Напред",
+              previous: "Назад",
+              today: "Днес",
+              month: "Месец",
+              week: "Седмица",
+              day: "Ден",
+              agenda: "Програма",
+              date: "Дата",
+              time: "Час",
+              event: "Занятие",
+              noEventsInRange: "Няма занятия в този период."
+            }}
+            eventPropGetter={eventPropGetter}
+            onSelectEvent={(e) => setLessonDetailsModal(e.resource as LessonWithRelations)}
+          />
+        )}
+      </div>
 
-            return (
-              <div key={l.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow duration-200">
-                <div className="flex items-start gap-4">
-                  {/* Date box */}
-                  <div className={`h-14 w-14 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 ${typeConf.bg}`}>
-                    <span className={`text-xs font-bold uppercase ${typeConf.text}`}>
-                      {new Date(l.start_time).toLocaleDateString('bg-BG', { month: 'short' })}
-                    </span>
-                    <span className={`text-xl font-extrabold leading-none ${typeConf.text}`}>
-                      {new Date(l.start_time).getDate()}
-                    </span>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg ${typeConf.bg} ${typeConf.text}`}>
-                        {typeConf.label}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-gray-500">
-                        <span className={`w-1.5 h-1.5 rounded-full ${statusConf.dot}`} />
-                        {statusConf.label}
-                      </span>
-                    </div>
-
-                    <p className="font-semibold text-gray-900 truncate">
-                      {l.students?.profiles?.first_name} {l.students?.profiles?.last_name}
-                    </p>
-
-                    <div className="flex items-center gap-3 mt-1 text-sm text-gray-500 flex-wrap">
-                      <span>{fmtDate(l.start_time)}</span>
-                      <span className="text-gray-300">·</span>
-                      <span>{fmtTime(l.start_time)} – {fmtTime(l.end_time)}</span>
-                      <span className="text-gray-300">·</span>
-                      <span>{duration} мин.</span>
-                      {l.vehicles && (
-                        <>
-                          <span className="text-gray-300">·</span>
-                          <span className="font-mono">{l.vehicles.registration_number}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Grade */}
-                  {l.grade != null && (
-                    <div className="flex-shrink-0 text-center bg-primary-50 border border-primary-100 rounded-xl px-4 py-2">
-                      <p className="text-3xl font-extrabold text-primary-600">{l.grade}</p>
-                      <p className="text-[10px] text-primary-400 font-medium">ОЦЕНКА</p>
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  {l.status === 'scheduled' && (
-                    <div className="flex-shrink-0 flex flex-col gap-1.5">
-                      <button
-                        onClick={() => { setNotesModal(l); setNotesForm({ instructor_notes: l.instructor_notes ?? '', grade: '', status: 'completed' }); }}
-                        className="px-3 py-1.5 rounded-lg bg-green-50 text-green-700 text-xs font-semibold hover:bg-green-100 transition-colors duration-150"
-                      >
-                        Завърши
-                      </button>
-                      <button
-                        onClick={() => handleCancel(l.id)}
-                        className="px-3 py-1.5 rounded-lg bg-red-50 text-red-600 text-xs font-semibold hover:bg-red-100 transition-colors duration-150"
-                      >
-                        Откажи
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {l.instructor_notes && (
-                  <div className="mt-4 pt-4 border-t border-gray-50">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Бележки</p>
-                    <p className="text-sm text-gray-600 bg-gray-50 rounded-xl px-4 py-3">{l.instructor_notes}</p>
-                  </div>
-                )}
+      {/* Lesson Details Modal */}
+      <Modal isOpen={!!lessonDetailsModal} onClose={() => setLessonDetailsModal(null)} title="Детайли за занятие" size="md">
+        {lessonDetailsModal && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-gray-500 font-semibold uppercase">Студент</p>
+                <p className="font-medium">{lessonDetailsModal.students?.profiles?.first_name} {lessonDetailsModal.students?.profiles?.last_name}</p>
               </div>
-            );
-          })}
-        </div>
-      )}
+              <div>
+                <p className="text-xs text-gray-500 font-semibold uppercase">Тип</p>
+                <p className="font-medium">{TYPE_CONFIG[lessonDetailsModal.type]?.label}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-semibold uppercase">Статус</p>
+                <p className="font-medium flex items-center gap-1">
+                  <span className={`w-2 h-2 rounded-full ${STATUS_CONFIG[lessonDetailsModal.status]?.dot}`} />
+                  {STATUS_CONFIG[lessonDetailsModal.status]?.label}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-semibold uppercase">Време</p>
+                <p className="font-medium">{fmtDate(lessonDetailsModal.start_time)}, {fmtTime(lessonDetailsModal.start_time)} - {fmtTime(lessonDetailsModal.end_time)}</p>
+              </div>
+              {lessonDetailsModal.vehicles && (
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500 font-semibold uppercase">Автомобил</p>
+                  <p className="font-medium">{lessonDetailsModal.vehicles.make} {lessonDetailsModal.vehicles.model} ({lessonDetailsModal.vehicles.registration_number})</p>
+                </div>
+              )}
+            </div>
+
+            {lessonDetailsModal.instructor_notes && (
+              <div className="bg-gray-50 p-3 rounded-lg mt-2">
+                <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Бележки</p>
+                <p className="text-sm">{lessonDetailsModal.instructor_notes}</p>
+              </div>
+            )}
+            
+            {lessonDetailsModal.grade && (
+              <div className="bg-primary-50 p-3 rounded-lg mt-2">
+                <p className="text-xs text-primary-600 font-semibold uppercase mb-1">Оценка</p>
+                <p className="text-lg font-bold text-primary-700">{lessonDetailsModal.grade}</p>
+              </div>
+            )}
+
+            {lessonDetailsModal.status === 'scheduled' && (
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <Button variant="secondary" onClick={() => handleCancel(lessonDetailsModal.id)}>Откажи</Button>
+                <Button onClick={() => { 
+                  setNotesModal(lessonDetailsModal); 
+                  setNotesForm({ instructor_notes: lessonDetailsModal.instructor_notes ?? '', grade: '', status: 'completed' }); 
+                }}>Завърши</Button>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
 
       {/* Create modal */}
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Ново занятие">
@@ -268,6 +275,19 @@ export default function InstructorSchedulePage() {
             <select value={createForm.student_id} onChange={e => setCreateForm(f => ({ ...f, student_id: e.target.value }))} className={selectCls}>
               {students.map(s => <option key={s.id} value={s.id}>{s.profiles.first_name} {s.profiles.last_name} ({s.egn})</option>)}
             </select>
+            
+            {studentProgress && (
+              <div className="mt-2 bg-blue-50 text-blue-800 p-3 rounded-xl text-sm space-y-1 border border-blue-100">
+                <div className="flex justify-between">
+                  <span>Теория: {studentProgress.completedTheoryHours} / {studentProgress.requiredTheoryHours} ч.</span>
+                  <span className="font-semibold">Остават: {Math.max(0, studentProgress.requiredTheoryHours - studentProgress.completedTheoryHours)} ч.</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Практика: {studentProgress.completedPracticeHours} / {studentProgress.requiredPracticeHours} ч.</span>
+                  <span className="font-semibold">Остават: {Math.max(0, studentProgress.requiredPracticeHours - studentProgress.completedPracticeHours)} ч.</span>
+                </div>
+              </div>
+            )}
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-1">МПС (незадължително)</label>

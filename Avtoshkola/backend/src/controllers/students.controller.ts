@@ -187,8 +187,8 @@ export const getProgress = async (req: Request, res: Response): Promise<void> =>
   sendSuccess(res, {
     completedTheoryHours: +calcHours(lessons.filter(l => (l as { type: string }).type === 'theory')).toFixed(1),
     completedPracticeHours: +calcHours(lessons.filter(l => (l as { type: string }).type === 'practice')).toFixed(1),
-    requiredTheoryHours: 30,   // Bulgarian Наредба № 37 minimum
-    requiredPracticeHours: 40, // Bulgarian Наредба № 37 minimum
+    requiredTheoryHours: 9,   // Bulgarian Наредба № 37 minimum
+    requiredPracticeHours: 31, // Bulgarian Наредба № 37 minimum
     examsPassed: exams.filter(e => e.status === 'passed').length,
     examsFailed: exams.filter(e => e.status === 'failed').length,
     totalPaid: payments.filter(p => p.status === 'paid').reduce((s, p) => s + Number(p.amount), 0),
