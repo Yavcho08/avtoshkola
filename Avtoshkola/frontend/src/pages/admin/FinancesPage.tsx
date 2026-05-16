@@ -28,7 +28,7 @@ const PAY_STATUS_CONFIG: Record<string, { dot: string; label: string; badge: str
 };
 
 function fmt(n: number) {
-  return new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'BGN' }).format(n);
+  return new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'EUR' }).format(n);
 }
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('bg-BG', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -261,7 +261,7 @@ export default function AdminFinancesPage() {
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Сума (лв.)" type="number" step="0.01" value={paymentForm.amount} onChange={e => setPaymentForm(f => ({ ...f, amount: e.target.value }))} required />
+            <Input label="Сума (€)" type="number" step="0.01" value={paymentForm.amount} onChange={e => setPaymentForm(f => ({ ...f, amount: e.target.value }))} required />
             <Input label="Падеж" type="date" value={paymentForm.due_date} onChange={e => setPaymentForm(f => ({ ...f, due_date: e.target.value }))} required />
           </div>
           <div>
@@ -283,7 +283,7 @@ export default function AdminFinancesPage() {
           {formError && <p className="text-sm text-red-600 bg-red-50 rounded-xl p-3">{formError}</p>}
           <Input label="Описание" value={expenseForm.description} onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))} required />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Сума (лв.)" type="number" step="0.01" value={expenseForm.amount} onChange={e => setExpenseForm(f => ({ ...f, amount: e.target.value }))} required />
+            <Input label="Сума (€)" type="number" step="0.01" value={expenseForm.amount} onChange={e => setExpenseForm(f => ({ ...f, amount: e.target.value }))} required />
             <Input label="Дата" type="date" value={expenseForm.expense_date} onChange={e => setExpenseForm(f => ({ ...f, expense_date: e.target.value }))} required />
           </div>
           <div>

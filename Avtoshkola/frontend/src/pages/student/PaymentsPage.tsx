@@ -17,7 +17,7 @@ const STATUS_CONFIG: Record<string, { label: string; dot: string; row: string }>
 };
 
 function fmt(n: number) {
-  return new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'BGN' }).format(n);
+  return new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'EUR' }).format(n);
 }
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('bg-BG', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -115,7 +115,7 @@ export default function StudentPaymentsPage() {
                 <div className="flex items-center gap-4">
                   {/* Amount box */}
                   <div className={`h-14 w-16 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 ${typeConf.bg}`}>
-                    <span className={`text-xs font-bold leading-none ${typeConf.text}`}>лв.</span>
+                    <span className={`text-xs font-bold leading-none ${typeConf.text}`}>€</span>
                     <span className={`text-base font-extrabold leading-tight ${typeConf.text}`}>
                       {Number(p.amount).toLocaleString('bg-BG')}
                     </span>

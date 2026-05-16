@@ -15,7 +15,7 @@ function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString('bg-BG', { hour: '2-digit', minute: '2-digit' });
 }
 function fmt(n: number) {
-  return new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'BGN' }).format(n);
+  return new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'EUR' }).format(n);
 }
 
 // ── Progress bar ──────────────────────────────────────────────────────────────

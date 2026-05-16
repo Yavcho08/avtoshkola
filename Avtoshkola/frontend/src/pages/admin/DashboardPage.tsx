@@ -6,7 +6,7 @@ import { Spinner } from '../../components/common/Spinner';
 type Stats = Awaited<ReturnType<typeof dashboardApi.admin>>;
 
 function fmt(n: number) {
-  return new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'BGN', maximumFractionDigits: 0 }).format(n);
+  return new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
 }
 
 function KpiCard({ value, label, sub, icon, bg, textColor, to }:
