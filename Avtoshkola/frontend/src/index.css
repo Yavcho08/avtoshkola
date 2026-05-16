@@ -3,8 +3,21 @@
 @tailwind utilities;
 
 @layer base {
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; cursor: default; user-select: none; }
+  html { scroll-behavior: smooth; }
   body { font-family: 'Inter', system-ui, sans-serif; }
+  input, textarea, select { cursor: text; user-select: text; }
+  button, a, [role="button"] { cursor: pointer; }
+}
+
+@keyframes ripple-out {
+  0%   { transform: scale(1);   opacity: 0.65; }
+  100% { transform: scale(40);  opacity: 0;    }
+}
+
+@keyframes btn-flash {
+  0%   { opacity: 0.3; }
+  100% { opacity: 0;   }
 }
 
 @layer utilities {

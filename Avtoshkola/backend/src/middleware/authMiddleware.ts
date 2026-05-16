@@ -10,49 +10,49 @@ export const authenticate = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  const authHeader = req.headers.authorization;
+  try {
+    const authHeader = req.headers.authorization;
 
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ data: null, error: 'Authorization header missing or malformed.' });
-    return;
+    if (!authHeader?.startsWith('Bearer ')) {
+      res.status(401).json({ data: null, error: 'Authorization header missing or malformed.' });
+      return;
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    // Verify the JWT with Supabase Auth.
+    const authResult = await supabase.auth.getUser(token);
+    const authError = authResult.error;
+    const user = authResult.data?.user;
+
+    if (authError || !user) {
+      res.status(401).json({ data: null, error: 'Invalid or expired token.' });
+      return;
+    }
+
+    // Fetch the profile row — this is where the application role lives.
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single<Profile>();
+
+    if (profileError || !profile) {
+      res.status(403).json({ data: null, error: 'User profile not found. Contact an administrator.' });
+      return;
+    }
+
+    req.user = {
+      id: user.id,
+      email: user.email ?? '',
+      role: profile.role,
+      profile,
+    } satisfies AuthenticatedUser;
+
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  const token = authHeader.split(' ')[1];
-
-  // Verify the JWT with Supabase Auth (the service-role client can validate
-  // tokens issued by the same project without a round-trip to a JWKS endpoint).
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser(token);
-
-  if (authError || !user) {
-    res.status(401).json({ data: null, error: 'Invalid or expired token.' });
-    return;
-  }
-
-  // Fetch the profile row — this is where the application role lives.
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single<Profile>();
-
-  if (profileError || !profile) {
-    // The auth.users row exists but the profile hasn't been created yet
-    // (e.g., the admin hasn't finished onboarding this account).
-    res.status(403).json({ data: null, error: 'User profile not found. Contact an administrator.' });
-    return;
-  }
-
-  req.user = {
-    id: user.id,
-    email: user.email ?? '',
-    role: profile.role,
-    profile,
-  } satisfies AuthenticatedUser;
-
-  next();
 };
 
 // ─── requireRole ─────────────────────────────────────────────────────────────

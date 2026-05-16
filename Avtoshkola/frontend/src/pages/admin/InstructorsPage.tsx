@@ -5,8 +5,12 @@ import { Button } from '../../components/common/Button';
 import { Input } from '../../components/common/Input';
 import { Modal } from '../../components/common/Modal';
 import { Spinner } from '../../components/common/Spinner';
-import { EmptyState } from '../../components/common/EmptyState';
 import { extractErrorMessage } from '../../api/client';
+
+function Initials({ name }: { name: string }) {
+  const parts = name.trim().split(' ');
+  return <>{((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase()}</>;
+}
 
 export default function AdminInstructorsPage() {
   const [instructors, setInstructors] = useState<InstructorWithProfile[]>([]);
@@ -46,42 +50,83 @@ export default function AdminInstructorsPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setIsModalOpen(true)}>+ Нов инструктор</Button>
+    <div className="space-y-5 max-w-5xl">
+
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Инструктори</h2>
+          <p className="text-sm text-gray-500 mt-0.5">{instructors.length} регистрирани инструктора</p>
+        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 active:scale-95 transition-all duration-150 shadow-lg shadow-blue-600/25"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Нов инструктор
+        </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      {/* Table */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="flex justify-center py-16"><Spinner className="h-7 w-7 text-primary-600" /></div>
         ) : instructors.length === 0 ? (
-          <EmptyState title="Няма регистрирани инструктори" />
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="h-16 w-16 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <p className="text-gray-500 font-medium">Няма регистрирани инструктори</p>
+          </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                {['Имена', 'Лиценз №', 'Телефон', 'Активен', ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/70">
+                {['Инструктор', 'Лиценз №', 'Телефон', 'Статус', ''].map(h => (
+                  <th key={h} className="px-5 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {instructors.map(i => (
-                <tr key={i.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{i.profiles.first_name} {i.profiles.last_name}</td>
-                  <td className="px-4 py-3 font-mono text-gray-700">{i.license_number}</td>
-                  <td className="px-4 py-3 text-gray-600">{i.profiles.phone ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-block h-2.5 w-2.5 rounded-full ${i.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                    <span className="ml-2 text-gray-700">{i.is_active ? 'Да' : 'Не'}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Button variant="ghost" size="sm" onClick={() => toggleActive(i.id, i.is_active)}>
-                      {i.is_active ? 'Деактивирай' : 'Активирай'}
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-gray-50">
+              {instructors.map(i => {
+                const fullName = `${i.profiles.first_name} ${i.profiles.last_name}`;
+                return (
+                  <tr key={i.id} className="hover:bg-violet-50/30 transition-colors duration-100">
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-400 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                          <Initials name={fullName} />
+                        </div>
+                        <span className="font-semibold text-gray-900">{fullName}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 font-mono text-gray-500 text-xs">{i.license_number}</td>
+                    <td className="px-5 py-3.5 text-gray-600">{i.profiles.phone ?? '—'}</td>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg
+                        ${i.is_active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${i.is_active ? 'bg-green-400' : 'bg-gray-400'}`} />
+                        {i.is_active ? 'Активен' : 'Неактивен'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <button
+                        onClick={() => toggleActive(i.id, i.is_active)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors duration-150
+                          ${i.is_active
+                            ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                            : 'bg-green-50 text-green-700 hover:bg-green-100'}`}
+                      >
+                        {i.is_active ? 'Деактивирай' : 'Активирай'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -89,15 +134,15 @@ export default function AdminInstructorsPage() {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Нов инструктор">
         <form onSubmit={handleCreate} className="space-y-4">
-          {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{formError}</p>}
+          {formError && <p className="text-sm text-red-600 bg-red-50 rounded-xl p-3">{formError}</p>}
           <div className="grid grid-cols-2 gap-4">
             <Input label="Собствено" value={form.first_name} onChange={e => setForm(f => ({ ...f, first_name: e.target.value }))} required />
-            <Input label="Фамилия" value={form.last_name} onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))} required />
+            <Input label="Фамилия"  value={form.last_name}  onChange={e => setForm(f => ({ ...f, last_name:  e.target.value }))} required />
           </div>
           <Input label="Лиценз №" value={form.license_number} onChange={e => setForm(f => ({ ...f, license_number: e.target.value }))} required />
-          <Input label="Имейл" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required />
-          <Input label="Парола" type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} required />
-          <Input label="Телефон" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+          <Input label="Имейл"    type="email"    value={form.email}    onChange={e => setForm(f => ({ ...f, email:    e.target.value }))} required />
+          <Input label="Парола"   type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} required />
+          <Input label="Телефон"  value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>Отказ</Button>
             <Button type="submit" isLoading={isSaving}>Създай</Button>

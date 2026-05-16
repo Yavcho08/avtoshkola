@@ -3,8 +3,12 @@ import { useAuth } from '../hooks/useAuth';
 import { ProtectedRoute } from './ProtectedRoute';
 import { AppLayout } from '../components/layout/AppLayout';
 
+// Public
+import LandingPage from '../pages/LandingPage';
+
 // Auth
 import LoginPage from '../pages/auth/LoginPage';
+import RegisterPage from '../pages/auth/RegisterPage';
 
 // Admin
 import AdminDashboardPage from '../pages/admin/DashboardPage';
@@ -25,7 +29,7 @@ import StudentPaymentsPage from '../pages/student/PaymentsPage';
 
 function RootRedirect() {
   const { user } = useAuth();
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <LandingPage />;
   const home = { admin: '/admin', instructor: '/instructor', student: '/student' } as const;
   return <Navigate to={home[user.role]} replace />;
 }
@@ -34,6 +38,7 @@ export function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
       {/* ── Admin ──────────────────────────────────────────── */}
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>

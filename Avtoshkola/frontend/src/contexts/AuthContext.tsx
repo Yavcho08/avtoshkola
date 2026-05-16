@@ -5,6 +5,7 @@ import {
   useCallback,
   ReactNode,
 } from 'react';
+import axios from 'axios';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { setAuthToken, apiClient } from '../api/client';
@@ -14,6 +15,7 @@ interface AuthContextValue {
   user: AuthenticatedUser | null;
   session: Session | null;
   isLoading: boolean;
+  profileError: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -29,16 +31,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const hydrateUser = useCallback(async (sess: Session) => {
     setAuthToken(sess.access_token);
     setSession(sess);
+    setProfileError(null);
     try {
       const profile = await fetchProfile();
       setUser(profile);
-    } catch {
-      // Token valid but profile missing — sign out cleanly
-      await supabase.auth.signOut();
+    } catch (err) {
+      // Sign out only on explicit auth/profile errors (401/403).
+      // Network errors (backend down) keep the Supabase session alive
+      // so the user sees an error message instead of silently logging out.
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        if (status === 401 || status === 403) {
+          await supabase.auth.signOut();
+          return;
+        }
+        const msg = (err.response?.data as { error?: string })?.error ?? err.message;
+        setProfileError(msg || 'Неуспешна връзка с сървъра. Моля, опитайте отново.');
+      } else {
+        setProfileError('Неуспешна връзка с сървъра. Моля, опитайте отново.');
+      }
     }
   }, []);
 
@@ -81,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, session, isLoading, profileError, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

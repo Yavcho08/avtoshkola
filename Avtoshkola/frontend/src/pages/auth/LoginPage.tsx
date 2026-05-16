@@ -1,22 +1,21 @@
 import { FormEvent, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 
 export default function LoginPage() {
-  const { login, user } = useAuth();
-  const navigate = useNavigate();
+  const { login, user, profileError } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Already logged in — redirect immediately
+  // Already logged in — redirect immediately (proper React way)
   if (user) {
     const home = { admin: '/admin', instructor: '/instructor', student: '/student' } as const;
-    navigate(home[user.role], { replace: true });
+    return <Navigate to={home[user.role]} replace />;
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -35,6 +34,20 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      {/* Back to landing */}
+      <Link
+        to="/"
+        className="fixed top-5 left-5 inline-flex items-center gap-2 px-4 py-2 rounded-xl
+                   bg-white border border-gray-200 shadow-sm text-sm font-medium text-gray-600
+                   hover:text-gray-900 hover:shadow-md hover:border-gray-300
+                   transition-all duration-150 active:scale-95"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Начална страница
+      </Link>
+
       <div className="w-full max-w-md">
         {/* Brand */}
         <div className="text-center mb-8">
@@ -54,9 +67,9 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Вход в системата</h2>
 
-          {error && (
+          {(error || profileError) && (
             <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-              {error}
+              {error || profileError}
             </div>
           )}
 
@@ -83,6 +96,15 @@ export default function LoginPage() {
               Влез
             </Button>
           </form>
+
+          <div className="mt-6 pt-6 border-t border-gray-100 text-center">
+            <p className="text-sm text-gray-500">
+              Нямате акаунт?{' '}
+              <Link to="/register" className="text-primary-600 font-semibold hover:text-primary-700">
+                Регистрирайте се
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
