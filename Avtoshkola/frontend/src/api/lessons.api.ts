@@ -13,12 +13,13 @@ interface LessonListParams {
 }
 
 interface CreateLessonPayload {
-  student_id: string;
+  student_id?: string;
   instructor_id: string;
   vehicle_id?: string | null;
   type: string;
   start_time: string;
   end_time: string;
+  location?: string | null;
 }
 
 interface UpdateLessonPayload {
@@ -28,6 +29,7 @@ interface UpdateLessonPayload {
   start_time?: string;
   end_time?: string;
   vehicle_id?: string | null;
+  location?: string | null;
 }
 
 export const lessonsApi = {

@@ -79,9 +79,9 @@ export const list = async (req: Request, res: Response): Promise<void> => {
   sendPaginated(res, data ?? [], count ?? 0, page, limit);
 };
 
-// POST /api/lessons  (admin or instructor)
+// POST /api/lessons  (admin, instructor, or student self-booking)
 export const create = async (req: Request, res: Response): Promise<void> => {
-  let { student_id, instructor_id, vehicle_id, type, start_time, end_time } = req.body;
+  let { student_id, instructor_id, vehicle_id, type, start_time, end_time, location } = req.body;
 
   // Instructors can only create lessons for themselves
   if (req.user!.role === 'instructor') {
@@ -92,6 +92,14 @@ export const create = async (req: Request, res: Response): Promise<void> => {
     } else if (self?.id !== instructor_id) {
       sendError(res, 'Instructors can only schedule their own lessons.', 403); return;
     }
+  }
+
+  // Students always book for themselves
+  if (req.user!.role === 'student') {
+    const { data: self } = await supabase
+      .from('students').select('id').eq('profile_id', req.user!.id).single();
+    if (!self) { sendError(res, 'Записът за курсист не е намерен.', 404); return; }
+    student_id = self.id;
   }
 
   if (!student_id || !instructor_id || !type || !start_time || !end_time) {
@@ -113,6 +121,7 @@ export const create = async (req: Request, res: Response): Promise<void> => {
       type,
       start_time,
       end_time,
+      location: location?.trim() || null,
       status: 'scheduled',
       instructor_notes: null,
       grade: null,
@@ -127,7 +136,7 @@ export const create = async (req: Request, res: Response): Promise<void> => {
 // PATCH /api/lessons/:id  (admin or instructor)
 export const update = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
-  const { status, instructor_notes, grade, start_time, end_time, vehicle_id } = req.body;
+  const { status, instructor_notes, grade, start_time, end_time, vehicle_id, location } = req.body;
   const user = req.user!;
 
   const { data: existing, error: fetchError } = await supabase
@@ -169,6 +178,7 @@ export const update = async (req: Request, res: Response): Promise<void> => {
   if (start_time !== undefined) updates.start_time = start_time;
   if (end_time !== undefined) updates.end_time = end_time;
   if (vehicle_id !== undefined) updates.vehicle_id = vehicle_id;
+  if (location !== undefined) updates.location = location?.trim() || null;
 
   const { data, error } = await supabase
     .from('lessons').update(updates).eq('id', id)

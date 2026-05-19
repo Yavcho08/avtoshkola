@@ -59,7 +59,7 @@ export default function InstructorSchedulePage() {
   const [studentProgress, setStudentProgress] = useState<StudentProgressSummary | null>(null);
 
   const [createForm, setCreateForm] = useState({
-    student_id: '', vehicle_id: '', type: 'practice', start_time: '', end_time: '',
+    student_id: '', vehicle_id: '', type: 'practice', start_time: '', end_time: '', location: '',
   });
   const [notesForm, setNotesForm] = useState({ instructor_notes: '', grade: '', status: 'completed' });
 
@@ -101,6 +101,7 @@ export default function InstructorSchedulePage() {
         ...createForm,
         instructor_id: '',
         vehicle_id: createForm.vehicle_id || null,
+        location: createForm.location || null,
       });
       setLessons(prev => [created, ...prev]);
       setIsCreateOpen(false);
@@ -231,6 +232,12 @@ export default function InstructorSchedulePage() {
                 <p className="text-xs text-gray-500 font-semibold uppercase">Време</p>
                 <p className="font-medium">{fmtDate(lessonDetailsModal.start_time)}, {fmtTime(lessonDetailsModal.start_time)} - {fmtTime(lessonDetailsModal.end_time)}</p>
               </div>
+              {lessonDetailsModal.location && (
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500 font-semibold uppercase">Място</p>
+                  <p className="font-medium">{lessonDetailsModal.location}</p>
+                </div>
+              )}
               {lessonDetailsModal.vehicles && (
                 <div className="col-span-2">
                   <p className="text-xs text-gray-500 font-semibold uppercase">Автомобил</p>
@@ -307,6 +314,7 @@ export default function InstructorSchedulePage() {
             <Input label="Начало" type="datetime-local" value={createForm.start_time} onChange={e => setCreateForm(f => ({ ...f, start_time: e.target.value }))} required />
             <Input label="Край"   type="datetime-local" value={createForm.end_time}   onChange={e => setCreateForm(f => ({ ...f, end_time:   e.target.value }))} required />
           </div>
+          <Input label="Място за среща (незадължително)" type="text" value={createForm.location} onChange={e => setCreateForm(f => ({ ...f, location: e.target.value }))} placeholder="напр. пред КАТ, бул. България 1..." />
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={() => setIsCreateOpen(false)}>Отказ</Button>
             <Button type="submit" isLoading={isSaving}>Запиши</Button>

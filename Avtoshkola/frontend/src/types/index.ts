@@ -81,6 +81,7 @@ export interface Lesson {
   type: LessonType;
   start_time: string;
   end_time: string;
+  location: string | null;
   status: LessonStatus;
   instructor_notes: string | null;
   grade: number | null;

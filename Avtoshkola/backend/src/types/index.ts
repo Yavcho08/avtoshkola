@@ -81,6 +81,7 @@ export interface Lesson {
   type: LessonType;
   start_time: string;   // ISO timestamptz
   end_time: string;     // ISO timestamptz
+  location: string | null;
   status: LessonStatus;
   instructor_notes: string | null;
   grade: number | null; // 2–6 (Bulgarian grading scale)
@@ -122,7 +123,7 @@ export type StudentInsert = Omit<Student, 'id'> & { id?: string };
 export type CategoryInsert = Omit<Category, 'id'> & { id?: string };
 export type VehicleInsert = Omit<Vehicle, 'id'> & { id?: string };
 export type StudentCategoryInsert = Omit<StudentCategory, 'id'> & { id?: string };
-export type LessonInsert = Omit<Lesson, 'id'> & { id?: string };
+export type LessonInsert = Omit<Lesson, 'id' | 'location'> & { id?: string; location?: string | null };
 export type ExamInsert = Omit<Exam, 'id'> & { id?: string };
 export type PaymentInsert = Omit<Payment, 'id'> & { id?: string };
 export type ExpenseInsert = Omit<Expense, 'id'> & { id?: string };
