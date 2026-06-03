@@ -23,6 +23,29 @@ interface FullFinancialSummary extends FinancialSummary {
   monthlyExpenses: number;
 }
 
+interface CheckoutSessionResponse {
+  url: string;
+  session_id: string;
+}
+
+export const stripeApi = {
+  createCheckoutSession: async (payment_id: string): Promise<CheckoutSessionResponse> => {
+    const { data } = await apiClient.post<ApiResponse<CheckoutSessionResponse>>(
+      '/payments/create-checkout-session',
+      { payment_id }
+    );
+    return data.data!;
+  },
+
+  confirmPayment: async (session_id: string, payment_id: string): Promise<PaymentWithStudent> => {
+    const { data } = await apiClient.post<ApiResponse<PaymentWithStudent>>(
+      '/payments/confirm-payment',
+      { session_id, payment_id }
+    );
+    return data.data!;
+  },
+};
+
 export const paymentsApi = {
   list: async (params: PaymentListParams = {}): Promise<PaginatedResponse<PaymentWithStudent>> => {
     const { data } = await apiClient.get<PaginatedResponse<PaymentWithStudent>>('/payments', { params });
