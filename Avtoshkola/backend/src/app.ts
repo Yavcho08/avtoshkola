@@ -43,6 +43,7 @@ import paymentsRouter from './routes/payments.routes';
 import expensesRouter from './routes/expenses.routes';
 import dashboardRouter from './routes/dashboard.routes';
 import categoriesRouter from './routes/categories.routes';
+import jobsRouter from './routes/jobs.routes';
 
 app.use('/api/auth',        authRouter);
 app.use('/api/students',    studentsRouter);
@@ -54,6 +55,7 @@ app.use('/api/payments',    paymentsRouter);
 app.use('/api/expenses',    expensesRouter);
 app.use('/api/dashboard',   dashboardRouter);
 app.use('/api/categories',  categoriesRouter);
+app.use('/api/jobs',        jobsRouter);
 
 // ─── 404 Catch-all ────────────────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
