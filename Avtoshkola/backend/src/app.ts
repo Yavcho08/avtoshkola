@@ -43,6 +43,7 @@ import paymentsRouter from './routes/payments.routes';
 import expensesRouter from './routes/expenses.routes';
 import dashboardRouter from './routes/dashboard.routes';
 import categoriesRouter from './routes/categories.routes';
+import { sendLessonReminders } from './services/emailReminder.service';
 
 app.use('/api/auth',        authRouter);
 app.use('/api/students',    studentsRouter);
@@ -54,6 +55,17 @@ app.use('/api/payments',    paymentsRouter);
 app.use('/api/expenses',    expensesRouter);
 app.use('/api/dashboard',   dashboardRouter);
 app.use('/api/categories',  categoriesRouter);
+
+// Vercel Cron — извиква се всеки ден в 09:00 Sofia time
+app.get('/api/cron/reminders', async (_req: Request, res: Response) => {
+  try {
+    await sendLessonReminders();
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[Cron] Error:', err);
+    res.status(500).json({ ok: false });
+  }
+});
 
 // ─── 404 Catch-all ────────────────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
