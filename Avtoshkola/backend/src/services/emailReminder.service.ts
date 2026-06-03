@@ -1,11 +1,12 @@
 import { Resend } from 'resend';
 import { supabase } from '../config/supabase';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-// Use onboarding@resend.dev for test keys.
-// For production: set RESEND_FROM_EMAIL to a verified domain address.
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'Автошкола <onboarding@resend.dev>';
+
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -158,6 +159,12 @@ export async function sendLessonReminders(): Promise<void> {
       getAuthEmail(studentRec.profile_id),
       getAuthEmail(instructorRec.profile_id),
     ]);
+
+    const resend = getResend();
+    if (!resend) {
+      console.warn('[Reminder] RESEND_API_KEY not set — skipping email sends.');
+      continue;
+    }
 
     // ── Email to student ──
     if (studentEmail) {

@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { paymentsApi, stripeApi } from '../../api/payments.api';
+import { paymentsApi } from '../../api/payments.api';
 import { PaymentWithStudent } from '../../types';
 import { Spinner } from '../../components/common/Spinner';
 
@@ -39,62 +38,16 @@ function EmptyPayments() {
 }
 
 export default function StudentPaymentsPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [payments, setPayments] = useState<PaymentWithStudent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [checkingOut, setCheckingOut] = useState<string | null>(null);
-  const [confirming, setConfirming] = useState(false);
-  const [banner, setBanner] = useState<{ type: 'success' | 'error' | 'cancelled'; msg: string } | null>(null);
 
   const loadPayments = useCallback(() => {
     return paymentsApi.list({ limit: 100 }).then(res => setPayments(res.data));
   }, []);
 
-  // Handle Stripe redirect-back (success or cancel)
-  useEffect(() => {
-    const success    = searchParams.get('success');
-    const cancelled  = searchParams.get('cancelled');
-    const sessionId  = searchParams.get('session_id');
-    const paymentId  = searchParams.get('payment_id');
-
-    if (cancelled === 'true') {
-      setBanner({ type: 'cancelled', msg: 'Плащането беше отменено.' });
-      setSearchParams({}, { replace: true });
-      return;
-    }
-
-    if (success === 'true' && sessionId && paymentId) {
-      setConfirming(true);
-      setSearchParams({}, { replace: true });
-
-      stripeApi
-        .confirmPayment(sessionId, paymentId)
-        .then(() => {
-          setBanner({ type: 'success', msg: 'Плащането беше успешно! Статусът е обновен.' });
-          return loadPayments();
-        })
-        .catch(() => {
-          setBanner({ type: 'error', msg: 'Плащането беше извършено, но статусът не можа да се обнови. Свържете се с администратора.' });
-        })
-        .finally(() => setConfirming(false));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   useEffect(() => {
     loadPayments().finally(() => setIsLoading(false));
   }, [loadPayments]);
-
-  const handlePay = async (paymentId: string) => {
-    setCheckingOut(paymentId);
-    try {
-      const { url } = await stripeApi.createCheckoutSession(paymentId);
-      window.location.href = url;
-    } catch {
-      setBanner({ type: 'error', msg: 'Грешка при създаване на плащане. Моля, опитайте отново.' });
-      setCheckingOut(null);
-    }
-  };
 
   const totalPaid  = payments.filter(p => p.status === 'paid').reduce((s, p) => s + Number(p.amount), 0);
   const totalOwed  = payments.filter(p => p.status !== 'paid').reduce((s, p) => s + Number(p.amount), 0);
@@ -108,31 +61,6 @@ export default function StudentPaymentsPage() {
         <h2 className="text-lg font-bold text-gray-900">Моите плащания</h2>
         <p className="text-sm text-gray-500 mt-0.5">История и статус на всички твои плащания</p>
       </div>
-
-      {/* Confirming overlay */}
-      {confirming && (
-        <div className="flex items-center gap-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700">
-          <Spinner className="h-4 w-4 text-blue-500" />
-          Потвърждаване на плащането…
-        </div>
-      )}
-
-      {/* Success / error / cancel banner */}
-      {banner && (
-        <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 text-sm ${
-          banner.type === 'success'   ? 'bg-green-50 border-green-200 text-green-800' :
-          banner.type === 'cancelled' ? 'bg-yellow-50 border-yellow-200 text-yellow-800' :
-                                        'bg-red-50 border-red-200 text-red-700'
-        }`}>
-          {banner.type === 'success' && (
-            <svg className="w-5 h-5 shrink-0 mt-0.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          )}
-          <span>{banner.msg}</span>
-          <button onClick={() => setBanner(null)} className="ml-auto text-current opacity-50 hover:opacity-80">✕</button>
-        </div>
-      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -185,8 +113,6 @@ export default function StudentPaymentsPage() {
           {payments.map(p => {
             const typeConf   = PAYMENT_TYPE_LABELS[p.type]   ?? { label: p.type,   bg: 'bg-gray-100', text: 'text-gray-600' };
             const statusConf = STATUS_CONFIG[p.status] ?? { label: p.status, dot: 'bg-gray-400', row: '' };
-            const canPay     = p.status === 'pending' || p.status === 'overdue';
-            const isProcessing = checkingOut === p.id;
 
             return (
               <div key={p.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow duration-200 ${statusConf.row}`}>
@@ -226,36 +152,11 @@ export default function StudentPaymentsPage() {
                     )}
                   </div>
 
-                  {/* Right side: amount + pay button */}
+                  {/* Right side: amount */}
                   <div className="flex-shrink-0 flex flex-col items-end gap-2">
                     <p className="text-xl font-extrabold text-gray-900">{fmt(Number(p.amount))}</p>
-
                     {p.status === 'overdue' && (
                       <p className="text-xs text-red-500 font-medium">Просрочено!</p>
-                    )}
-
-                    {canPay && (
-                      <button
-                        onClick={() => handlePay(p.id)}
-                        disabled={isProcessing || checkingOut !== null}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold
-                                   bg-primary-600 text-white hover:bg-primary-700 active:scale-95
-                                   disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <Spinner className="h-3 w-3 text-white" />
-                            Зареждане…
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                            </svg>
-                            Плати онлайн
-                          </>
-                        )}
-                      </button>
                     )}
                   </div>
                 </div>
