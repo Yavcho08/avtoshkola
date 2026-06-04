@@ -1,7 +1,11 @@
 import { Resend } from 'resend';
 import { supabase } from '../config/supabase';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY ?? 're_placeholder');
+  return _resend;
+}
 
 // Use onboarding@resend.dev for test keys.
 // For production: set RESEND_FROM_EMAIL to a verified domain address.
@@ -162,7 +166,7 @@ export async function sendLessonReminders(): Promise<void> {
     // ── Email to student ──
     if (studentEmail) {
       try {
-        await resend.emails.send({
+        await getResend().emails.send({
           from: FROM,
           to: studentEmail,
           subject: `Напомняне: Урок утре в ${fmtTime(lesson.start_time)} с ${instructorName}`,
@@ -183,7 +187,7 @@ export async function sendLessonReminders(): Promise<void> {
     // ── Email to instructor ──
     if (instructorEmail) {
       try {
-        await resend.emails.send({
+        await getResend().emails.send({
           from: FROM,
           to: instructorEmail,
           subject: `Напомняне: Урок с ${studentName} утре в ${fmtTime(lesson.start_time)}`,
