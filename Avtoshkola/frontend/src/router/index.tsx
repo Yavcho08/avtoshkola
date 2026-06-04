@@ -17,6 +17,7 @@ import AdminInstructorsPage from '../pages/admin/InstructorsPage';
 import AdminVehiclesPage from '../pages/admin/VehiclesPage';
 import AdminExamsPage from '../pages/admin/ExamsPage';
 import AdminFinancesPage from '../pages/admin/FinancesPage';
+import AdminEmailsPage from '../pages/admin/EmailsPage';
 
 // Instructor
 import InstructorDashboardPage from '../pages/instructor/DashboardPage';
@@ -49,6 +50,7 @@ export function AppRouter() {
           <Route path="/admin/vehicles"    element={<AdminVehiclesPage />} />
           <Route path="/admin/exams"       element={<AdminExamsPage />} />
           <Route path="/admin/finances"    element={<AdminFinancesPage />} />
+          <Route path="/admin/emails"      element={<AdminEmailsPage />} />
         </Route>
       </Route>
 
