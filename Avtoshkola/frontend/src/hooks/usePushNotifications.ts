@@ -12,6 +12,7 @@ export type PushState = 'unsupported' | 'denied' | 'subscribed' | 'unsubscribed'
 
 export function usePushNotifications() {
   const [state, setState] = useState<PushState>('loading');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -21,27 +22,48 @@ export function usePushNotifications() {
       const existing = await reg.pushManager.getSubscription();
       if (existing) { setState('subscribed'); return; }
       setState(Notification.permission === 'denied' ? 'denied' : 'unsubscribed');
-    });
+    }).catch(() => setState('unsupported'));
   }, []);
 
   const subscribe = async () => {
+    setError(null);
     setState('loading');
+
     try {
-      const { data: keyData } = await apiClient.get<{ publicKey: string }>('/push/vapid-public-key');
+      // 1. Explicitly request permission first — shows clear browser dialog
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setState('denied');
+        setError('Разрешението за нотификации е отказано. Разреши го от иконата за катинар в адресната лента.');
+        return;
+      }
+
+      // 2. Get VAPID key from backend
+      const keyRes = await apiClient.get<{ data: { publicKey: string } }>('/push/vapid-public-key');
+      const publicKey = keyRes.data.data?.publicKey;
+      if (!publicKey) throw new Error('Липсва VAPID ключ');
+
+      // 3. Subscribe via service worker
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(keyData.publicKey),
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
+
+      // 4. Save subscription to backend
       const { endpoint, keys } = sub.toJSON() as { endpoint: string; keys: Record<string, string> };
       await apiClient.post('/push/subscribe', { endpoint, keys });
+
       setState('subscribed');
-    } catch {
+    } catch (err: any) {
+      const msg = err?.response?.data?.error ?? err?.message ?? 'Неизвестна грешка';
+      setError(msg);
       setState(Notification.permission === 'denied' ? 'denied' : 'unsubscribed');
     }
   };
 
   const unsubscribe = async () => {
+    setError(null);
     setState('loading');
     try {
       const reg = await navigator.serviceWorker.ready;
@@ -56,5 +78,5 @@ export function usePushNotifications() {
     }
   };
 
-  return { state, subscribe, unsubscribe };
+  return { state, error, subscribe, unsubscribe };
 }

@@ -18,6 +18,7 @@ import AdminVehiclesPage from '../pages/admin/VehiclesPage';
 import AdminExamsPage from '../pages/admin/ExamsPage';
 import AdminFinancesPage from '../pages/admin/FinancesPage';
 import AdminEmailsPage from '../pages/admin/EmailsPage';
+import ChatPage from '../pages/ChatPage';
 
 // Instructor
 import InstructorDashboardPage from '../pages/instructor/DashboardPage';
@@ -59,6 +60,7 @@ export function AppRouter() {
         <Route element={<AppLayout />}>
           <Route path="/instructor"          element={<InstructorDashboardPage />} />
           <Route path="/instructor/schedule" element={<InstructorSchedulePage />} />
+          <Route path="/instructor/chat"    element={<ChatPage />} />
         </Route>
       </Route>
 
@@ -68,6 +70,7 @@ export function AppRouter() {
           <Route path="/student"           element={<StudentDashboardPage />} />
           <Route path="/student/schedule"  element={<StudentSchedulePage />} />
           <Route path="/student/payments"  element={<StudentPaymentsPage />} />
+          <Route path="/student/chat"     element={<ChatPage />} />
         </Route>
       </Route>
 

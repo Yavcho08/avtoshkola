@@ -6,7 +6,7 @@ interface NavItem { to: string; label: string; icon: JSX.Element }
 
 const adminNav: NavItem[] = [
   { to: '/admin',             label: 'Табло',             icon: <HomeIcon /> },
-  { to: '/admin/students',    label: 'Студенти',          icon: <UsersIcon /> },
+  { to: '/admin/students',    label: 'Курсисти',          icon: <UsersIcon /> },
   { to: '/admin/instructors', label: 'Инструктори',       icon: <InstructorIcon /> },
   { to: '/admin/vehicles',    label: 'Превозни средства', icon: <CarIcon /> },
   { to: '/admin/exams',       label: 'Изпити',            icon: <ClipboardIcon /> },
@@ -15,14 +15,16 @@ const adminNav: NavItem[] = [
 ];
 
 const instructorNav: NavItem[] = [
-  { to: '/instructor',          label: 'Табло',  icon: <HomeIcon /> },
-  { to: '/instructor/schedule', label: 'График', icon: <CalendarIcon /> },
+  { to: '/instructor',          label: 'Табло',       icon: <HomeIcon /> },
+  { to: '/instructor/schedule', label: 'График',      icon: <CalendarIcon /> },
+  { to: '/instructor/chat',     label: 'Съобщения',   icon: <ChatIcon /> },
 ];
 
 const studentNav: NavItem[] = [
-  { to: '/student',          label: 'Табло',    icon: <HomeIcon /> },
-  { to: '/student/schedule', label: 'График',   icon: <CalendarIcon /> },
-  { to: '/student/payments', label: 'Плащания', icon: <CurrencyIcon /> },
+  { to: '/student',          label: 'Табло',       icon: <HomeIcon /> },
+  { to: '/student/schedule', label: 'График',      icon: <CalendarIcon /> },
+  { to: '/student/payments', label: 'Плащания',    icon: <CurrencyIcon /> },
+  { to: '/student/chat',     label: 'Съобщения',   icon: <ChatIcon /> },
 ];
 
 const navByRole: Record<UserRole, NavItem[]> = {
@@ -34,7 +36,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
 const roleLabel: Record<UserRole, string> = {
   admin: 'Администратор',
   instructor: 'Инструктор',
-  student: 'Студент',
+  student: 'Курсист',
 };
 
 const roleBadgeColor: Record<UserRole, string> = {
@@ -101,6 +103,31 @@ export function Sidebar() {
         ))}
       </nav>
 
+      {/* avtoizpit.com link — only for students */}
+      {user.role === 'student' && (
+        <div className="px-3 pb-2">
+          <a
+            href="https://avtoizpit.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/20 transition-all duration-150 group"
+          >
+            <div className="h-8 w-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-blue-300 leading-tight">Тест по теория</p>
+              <p className="text-[10px] text-blue-400/70 leading-tight">avtoizpit.com</p>
+            </div>
+            <svg className="w-3 h-3 text-blue-400/50 group-hover:text-blue-400 transition-colors flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+      )}
+
       {/* User chip */}
       <div className="p-3 border-t border-white/5">
         <div className="flex items-center gap-3 px-2 py-2.5 rounded-xl bg-white/5">
@@ -143,4 +170,7 @@ function CalendarIcon() {
 }
 function EmailIcon() {
   return <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>;
+}
+function ChatIcon() {
+  return <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>;
 }

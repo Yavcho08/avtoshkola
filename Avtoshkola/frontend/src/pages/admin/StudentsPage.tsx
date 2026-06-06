@@ -86,7 +86,7 @@ export default function AdminStudentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Студенти</h2>
+          <h2 className="text-lg font-bold text-gray-900">Курсисти</h2>
           <p className="text-sm text-gray-500 mt-0.5">Общо {total} записа</p>
         </div>
         <button
@@ -147,7 +147,7 @@ export default function AdminStudentsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/70">
-                  {['Студент', 'ЕГН', 'Телефон', 'Записан на', 'Статус'].map(h => (
+                  {['Курсист', 'ЕГН', 'Телефон', 'Записан на', 'Статус'].map(h => (
                     <th key={h} className="px-5 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">{h}</th>
                   ))}
                 </tr>

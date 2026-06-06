@@ -178,7 +178,7 @@ export default function AdminFinancesPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/70">
-                    {['Студент', 'Тип', 'Сума', 'Падеж', 'Платено на', 'Статус', ''].map(h => (
+                    {['Курсист', 'Тип', 'Сума', 'Падеж', 'Платено на', 'Статус', ''].map(h => (
                       <th key={h} className="px-5 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
@@ -255,7 +255,7 @@ export default function AdminFinancesPage() {
         <form onSubmit={handleCreatePayment} className="space-y-4">
           {formError && <p className="text-sm text-red-600 bg-red-50 rounded-xl p-3">{formError}</p>}
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1">Студент</label>
+            <label className="text-sm font-medium text-gray-700 block mb-1">Курсист</label>
             <select value={paymentForm.student_id} onChange={e => setPaymentForm(f => ({ ...f, student_id: e.target.value }))} className={selectCls}>
               {students.map(s => <option key={s.id} value={s.id}>{s.profiles.first_name} {s.profiles.last_name} ({s.egn})</option>)}
             </select>

@@ -122,7 +122,7 @@ export default function AdminEmailsPage() {
 
             {/* Role filter */}
             <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
-              {([['all', 'Всички'], ['student', 'Студенти'], ['instructor', 'Инструктори']] as const).map(([val, lbl]) => (
+              {([['all', 'Всички'], ['student', 'Курсисти'], ['instructor', 'Инструктори']] as const).map(([val, lbl]) => (
                 <button key={val} onClick={() => setRoleFilter(val)}
                   className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150
                     ${roleFilter === val ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -161,7 +161,7 @@ export default function AdminEmailsPage() {
                     </div>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex-shrink-0
                       ${r.role === 'student' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'}`}>
-                      {r.role === 'student' ? 'Студент' : 'Инструктор'}
+                      {r.role === 'student' ? 'Курсист' : 'Инструктор'}
                     </span>
                   </button>
                 ))}

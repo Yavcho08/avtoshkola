@@ -85,7 +85,7 @@ export default function InstructorDashboardPage() {
           </div>
           <div className="flex flex-col items-center bg-white/10 rounded-2xl px-6 py-4 backdrop-blur-sm border border-white/10">
             <div className="text-3xl font-extrabold">{stats?.studentsCount ?? 0}</div>
-            <div className="text-violet-200 text-xs mt-1">Мои студенти</div>
+            <div className="text-violet-200 text-xs mt-1">Мои курсисти</div>
           </div>
         </div>
       </div>
@@ -108,7 +108,7 @@ export default function InstructorDashboardPage() {
         />
         <StatCard
           value={stats?.studentsCount ?? 0}
-          label="Мои студенти"
+          label="Мои курсисти"
           bg="bg-violet-50"
           textColor="text-violet-600"
           icon={<svg className="w-6 h-6 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>}

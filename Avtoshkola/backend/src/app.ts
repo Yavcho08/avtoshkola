@@ -46,6 +46,7 @@ import categoriesRouter from './routes/categories.routes';
 import jobsRouter from './routes/jobs.routes';
 import pushRouter from './routes/push.routes';
 import emailRouter from './routes/email.routes';
+import chatRouter from './routes/chat.routes';
 
 app.use('/api/auth',        authRouter);
 app.use('/api/students',    studentsRouter);
@@ -60,6 +61,7 @@ app.use('/api/categories',  categoriesRouter);
 app.use('/api/jobs',        jobsRouter);
 app.use('/api/push',        pushRouter);
 app.use('/api/emails',      emailRouter);
+app.use('/api/chat',        chatRouter);
 
 // ─── 404 Catch-all ────────────────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
