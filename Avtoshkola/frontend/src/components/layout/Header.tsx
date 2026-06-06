@@ -26,13 +26,9 @@ function NotificationBell() {
     if (isSubscribed) {
       await unsubscribe();
     } else {
-      const prevState = state;
       await subscribe();
-      // Check if we just subscribed
-      if (prevState !== 'subscribed') {
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-      }
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
     }
   };
 
