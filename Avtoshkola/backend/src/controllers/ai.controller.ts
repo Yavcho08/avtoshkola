@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import { supabase } from '../config/supabase';
 
 const DAILY_LIMIT = 10;
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const SYSTEM_PROMPT = `Ти си AI асистент за автошкола в България. Помагаш на курсистите да се подготвят за теоретичния изпит за шофьорска книжка.
 
@@ -47,13 +47,17 @@ export const ai = {
       });
     }
 
-    // Call Gemini
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const result = await model.generateContent([
-      { text: SYSTEM_PROMPT },
-      { text: question.trim() },
-    ]);
-    const answer = result.response.text();
+    // Call Groq
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: question.trim() },
+      ],
+      max_tokens: 1024,
+      temperature: 0.7,
+    });
+    const answer = completion.choices[0]?.message?.content ?? 'Няма отговор.';
 
     // Save to DB
     await supabase.from('ai_chats').insert({
