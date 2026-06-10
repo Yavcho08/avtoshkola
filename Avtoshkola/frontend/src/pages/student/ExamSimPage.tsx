@@ -120,7 +120,7 @@ export default function ExamSimPage() {
 
           <div>
             <h3 className="text-xl font-bold text-gray-900">Готов ли си за изпита?</h3>
-            <p className="text-gray-500 text-sm mt-2">10 въпроса · 4 отговора · Нужни са 7/10 за издаване</p>
+            <p className="text-gray-500 text-sm mt-2">10 реални въпроса от avtoizpit.com · 4 отговора · Нужни са 7/10</p>
           </div>
 
           <div className="grid grid-cols-3 gap-4 text-center">
@@ -151,7 +151,7 @@ export default function ExamSimPage() {
                        flex items-center justify-center gap-2"
           >
             {generating ? (
-              <><Spinner className="h-5 w-5 text-white" /> AI генерира въпросите…</>
+              <><Spinner className="h-5 w-5 text-white" /> Зареждане на въпросите…</>
             ) : remaining <= 0 ? (
               'Достигнат е дневният лимит'
             ) : (
@@ -220,6 +220,17 @@ export default function ExamSimPage() {
         {/* Question card */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
           <p className="text-base font-semibold text-gray-900 leading-snug">{q.question}</p>
+
+          {q.pictureUrl && (
+            <div className="flex justify-center">
+              <img
+                src={q.pictureUrl}
+                alt="Изображение към въпроса"
+                className="max-h-52 rounded-xl border border-gray-200 object-contain"
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            </div>
+          )}
 
           <div className="space-y-2.5">
             {q.options.map((opt, i) => (
@@ -333,49 +344,84 @@ export default function ExamSimPage() {
           </div>
         </div>
 
-        {/* Wrong answers review */}
-        {result.wrongQuestions.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
-            <h3 className="text-sm font-bold text-gray-700">
-              Сгрешени въпроси ({result.wrongQuestions.length})
-            </h3>
-            {result.wrongQuestions.map((q, i) => (
-              <div key={i} className="border border-red-100 rounded-xl overflow-hidden">
-                <div className="bg-red-50 px-4 py-3">
-                  <p className="text-sm font-medium text-gray-900">{q.question}</p>
+        {/* All questions review */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <h3 className="text-sm font-bold text-gray-700">
+            Преглед на всички въпроси
+          </h3>
+          {questions.map((q, i) => {
+            const chosen = answers[i] as number;
+            const isCorrect = chosen === q.correct;
+            return (
+              <div
+                key={i}
+                className={`border rounded-xl overflow-hidden ${isCorrect ? 'border-green-200' : 'border-red-200'}`}
+              >
+                {/* Question header */}
+                <div className={`px-4 py-3 flex items-start gap-3 ${isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
+                  <span className={`flex-shrink-0 h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5
+                    ${isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                    {isCorrect ? '✓' : '✗'}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Въпрос {i + 1}</p>
+                    <p className="text-sm font-medium text-gray-900">{q.question}</p>
+                    {q.pictureUrl && (
+                      <img
+                        src={q.pictureUrl}
+                        alt=""
+                        className="mt-2 max-h-32 rounded-lg border border-gray-200 object-contain"
+                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    )}
+                  </div>
                 </div>
+
+                {/* Answers */}
                 <div className="px-4 py-3 space-y-1.5">
-                  <div className="flex items-start gap-2 text-sm">
-                    <span className="h-5 w-5 rounded bg-red-100 text-red-600 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">✗</span>
-                    <span className="text-red-600">Твоят отговор: {q.options[q.chosen]}</span>
-                  </div>
-                  <div className="flex items-start gap-2 text-sm">
-                    <span className="h-5 w-5 rounded bg-green-100 text-green-600 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">✓</span>
-                    <span className="text-green-700">Верен: {q.options[q.correct]}</span>
-                  </div>
-                  <button
-                    onClick={() => setShowExplanation(showExplanation === i ? null : i)}
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium mt-1"
-                  >
-                    {showExplanation === i ? 'Скрий обяснение ▲' : 'Виж обяснение ▼'}
-                  </button>
-                  {showExplanation === i && (
-                    <p className="text-xs text-gray-600 bg-gray-50 rounded-lg px-3 py-2 mt-1 leading-relaxed">
-                      {q.explanation}
-                    </p>
+                  {q.options.map((opt, j) => {
+                    const isChosen = j === chosen;
+                    const isRight = j === q.correct;
+                    let cls = 'border-gray-100 bg-gray-50 text-gray-600';
+                    if (isRight) cls = 'border-green-300 bg-green-50 text-green-800 font-semibold';
+                    else if (isChosen && !isRight) cls = 'border-red-300 bg-red-50 text-red-700 line-through';
+                    return (
+                      <div
+                        key={j}
+                        className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg border ${cls}`}
+                      >
+                        <span className={`flex-shrink-0 h-5 w-5 rounded text-xs font-bold flex items-center justify-center
+                          ${isRight ? 'bg-green-500 text-white' : isChosen ? 'bg-red-400 text-white' : 'bg-white border border-gray-200 text-gray-400'}`}>
+                          {String.fromCharCode(65 + j)}
+                        </span>
+                        <span>{opt}</span>
+                        {isRight && <span className="ml-auto text-green-600 text-xs font-bold">Верен</span>}
+                        {isChosen && !isRight && <span className="ml-auto text-red-500 text-xs font-bold">Твоят</span>}
+                      </div>
+                    );
+                  })}
+
+                  {/* Explanation */}
+                  {q.explanation && (
+                    <>
+                      <button
+                        onClick={() => setShowExplanation(showExplanation === i ? null : i)}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium mt-1"
+                      >
+                        {showExplanation === i ? 'Скрий обяснение ▲' : 'Виж обяснение ▼'}
+                      </button>
+                      {showExplanation === i && (
+                        <p className="text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 leading-relaxed">
+                          {q.explanation}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* All correct */}
-        {result.wrongQuestions.length === 0 && (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-5 text-center text-green-700 text-sm font-medium">
-            🏆 Перфектен резултат — всички 10 отговора са верни!
-          </div>
-        )}
+            );
+          })}
+        </div>
 
         <button
           onClick={handleRestart}

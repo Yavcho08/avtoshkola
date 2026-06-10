@@ -5,6 +5,7 @@ export interface ExamQuestion {
   options: string[];
   correct: number;
   explanation: string;
+  pictureUrl?: string;
 }
 
 export interface ExamResult {
