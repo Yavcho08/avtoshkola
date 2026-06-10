@@ -20,6 +20,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/student/chat':      'Съобщения',
   '/instructor/chat':   'Съобщения',
   '/student/ai':        'AI Асистент',
+  '/student/exam':      'Симулация на изпит',
 };
 
 const ROLE_LABELS: Record<UserRole, string> = {
