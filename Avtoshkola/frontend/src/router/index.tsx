@@ -28,6 +28,7 @@ import InstructorSchedulePage from '../pages/instructor/SchedulePage';
 import StudentDashboardPage from '../pages/student/DashboardPage';
 import StudentSchedulePage from '../pages/student/SchedulePage';
 import StudentPaymentsPage from '../pages/student/PaymentsPage';
+import AiAssistantPage from '../pages/student/AiAssistantPage';
 
 function RootRedirect() {
   const { user } = useAuth();
@@ -71,6 +72,7 @@ export function AppRouter() {
           <Route path="/student/schedule"  element={<StudentSchedulePage />} />
           <Route path="/student/payments"  element={<StudentPaymentsPage />} />
           <Route path="/student/chat"     element={<ChatPage />} />
+          <Route path="/student/ai"       element={<AiAssistantPage />} />
         </Route>
       </Route>
 
