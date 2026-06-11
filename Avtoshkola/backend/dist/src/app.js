@@ -38,6 +38,11 @@ const expenses_routes_1 = __importDefault(require("./routes/expenses.routes"));
 const dashboard_routes_1 = __importDefault(require("./routes/dashboard.routes"));
 const categories_routes_1 = __importDefault(require("./routes/categories.routes"));
 const jobs_routes_1 = __importDefault(require("./routes/jobs.routes"));
+const push_routes_1 = __importDefault(require("./routes/push.routes"));
+const email_routes_1 = __importDefault(require("./routes/email.routes"));
+const chat_routes_1 = __importDefault(require("./routes/chat.routes"));
+const ai_routes_1 = __importDefault(require("./routes/ai.routes"));
+const exam_sim_routes_1 = __importDefault(require("./routes/exam-sim.routes"));
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/students', students_routes_1.default);
 app.use('/api/instructors', instructors_routes_1.default);
@@ -49,6 +54,11 @@ app.use('/api/expenses', expenses_routes_1.default);
 app.use('/api/dashboard', dashboard_routes_1.default);
 app.use('/api/categories', categories_routes_1.default);
 app.use('/api/jobs', jobs_routes_1.default);
+app.use('/api/push', push_routes_1.default);
+app.use('/api/emails', email_routes_1.default);
+app.use('/api/chat', chat_routes_1.default);
+app.use('/api/ai', ai_routes_1.default);
+app.use('/api/exam-sim', exam_sim_routes_1.default);
 // ─── 404 Catch-all ────────────────────────────────────────────────────────────
 app.use((_req, res) => {
     const body = { data: null, error: 'Route not found.' };

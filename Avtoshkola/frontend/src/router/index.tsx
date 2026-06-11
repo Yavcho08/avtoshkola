@@ -31,6 +31,9 @@ import StudentPaymentsPage from '../pages/student/PaymentsPage';
 import AiAssistantPage from '../pages/student/AiAssistantPage';
 import ExamSimPage from '../pages/student/ExamSimPage';
 
+// Shared
+import PracticeMapPage from '../pages/PracticeMapPage';
+
 function RootRedirect() {
   const { user } = useAuth();
   if (!user) return <LandingPage />;
@@ -54,6 +57,7 @@ export function AppRouter() {
           <Route path="/admin/exams"       element={<AdminExamsPage />} />
           <Route path="/admin/finances"    element={<AdminFinancesPage />} />
           <Route path="/admin/emails"      element={<AdminEmailsPage />} />
+          <Route path="/admin/map"         element={<PracticeMapPage />} />
         </Route>
       </Route>
 
@@ -63,6 +67,7 @@ export function AppRouter() {
           <Route path="/instructor"          element={<InstructorDashboardPage />} />
           <Route path="/instructor/schedule" element={<InstructorSchedulePage />} />
           <Route path="/instructor/chat"    element={<ChatPage />} />
+          <Route path="/instructor/map"     element={<PracticeMapPage />} />
         </Route>
       </Route>
 
@@ -75,6 +80,7 @@ export function AppRouter() {
           <Route path="/student/chat"     element={<ChatPage />} />
           <Route path="/student/ai"       element={<AiAssistantPage />} />
           <Route path="/student/exam"     element={<ExamSimPage />} />
+          <Route path="/student/map"      element={<PracticeMapPage />} />
         </Route>
       </Route>
 

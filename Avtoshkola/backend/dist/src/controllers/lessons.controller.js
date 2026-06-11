@@ -3,6 +3,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.cancel = exports.update = exports.create = exports.list = void 0;
 const supabase_1 = require("../config/supabase");
 const response_1 = require("../utils/response");
+const push_service_1 = require("../services/push.service");
+const email_service_1 = require("../services/email.service");
+function fmtDT(iso) {
+    return new Date(iso).toLocaleString('bg-BG', { dateStyle: 'short', timeStyle: 'short' });
+}
+async function getProfileIds(studentId, instructorId) {
+    const [{ data: s }, { data: i }] = await Promise.all([
+        supabase_1.supabase.from('students').select('profile_id').eq('id', studentId).single(),
+        supabase_1.supabase.from('instructors').select('profile_id').eq('id', instructorId).single(),
+    ]);
+    return [s?.profile_id, i?.profile_id].filter(Boolean);
+}
 // Overlap: [a_start, a_end) ∩ [b_start, b_end) ≠ ∅  ⟺  a_start < b_end AND a_end > b_start
 const detectConflict = async (instructorId, studentId, startTime, endTime, vehicleId, excludeId) => {
     const orParts = [
@@ -142,6 +154,14 @@ const create = async (req, res) => {
         (0, response_1.sendError)(res, error.message, 500);
         return;
     }
+    // Push + email notifications
+    const profileIds = await getProfileIds(data.student_id, data.instructor_id);
+    (0, push_service_1.sendPushToMany)(profileIds, {
+        title: '📅 Ново занятие насрочено',
+        body: `${data.type === 'theory' ? 'Теория' : 'Практика'} — ${fmtDT(data.start_time)}`,
+        url: '/student/schedule',
+    }).catch(() => { });
+    (0, email_service_1.sendLessonCreatedEmails)(data).catch(() => { });
     (0, response_1.sendSuccess)(res, data, 201);
 };
 exports.create = create;
@@ -202,6 +222,20 @@ const update = async (req, res) => {
         (0, response_1.sendError)(res, error.message, 500);
         return;
     }
+    // Push + email notifications on status change
+    if (status === 'completed' || status === 'cancelled') {
+        const profileIds = await getProfileIds(data.student_id, data.instructor_id);
+        const isCompleted = status === 'completed';
+        (0, push_service_1.sendPushToMany)(profileIds, {
+            title: isCompleted ? '✅ Занятието е завършено' : '❌ Занятието е отказано',
+            body: `${data.type === 'theory' ? 'Теория' : 'Практика'} — ${fmtDT(data.start_time)}${isCompleted && data.grade ? ` | Оценка: ${data.grade}` : ''}`,
+            url: '/student/schedule',
+        }).catch(() => { });
+        if (isCompleted)
+            (0, email_service_1.sendLessonCompletedEmail)(data).catch(() => { });
+        else
+            (0, email_service_1.sendLessonCancelledEmails)(data).catch(() => { });
+    }
     (0, response_1.sendSuccess)(res, data);
 };
 exports.update = update;
@@ -231,6 +265,17 @@ const cancel = async (req, res) => {
     if (error) {
         (0, response_1.sendError)(res, error.message, 500);
         return;
+    }
+    // Push notification
+    const { data: lesson } = await supabase_1.supabase.from('lessons').select('student_id, instructor_id, type, start_time').eq('id', id).single();
+    if (lesson) {
+        const profileIds = await getProfileIds(lesson.student_id, lesson.instructor_id);
+        (0, push_service_1.sendPushToMany)(profileIds, {
+            title: '❌ Занятието е отказано',
+            body: `${lesson.type === 'theory' ? 'Теория' : 'Практика'} — ${fmtDT(lesson.start_time)}`,
+            url: '/student/schedule',
+        }).catch(() => { });
+        (0, email_service_1.sendLessonCancelledEmails)(lesson).catch(() => { });
     }
     (0, response_1.sendSuccess)(res, null, 200, 'Lesson cancelled.');
 };

@@ -3,7 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.sendLessonReminders = sendLessonReminders;
 const resend_1 = require("resend");
 const supabase_1 = require("../config/supabase");
-const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
+let _resend = null;
+function getResend() {
+    if (!_resend)
+        _resend = new resend_1.Resend(process.env.RESEND_API_KEY ?? 're_placeholder');
+    return _resend;
+}
 // Use onboarding@resend.dev for test keys.
 // For production: set RESEND_FROM_EMAIL to a verified domain address.
 const FROM = process.env.RESEND_FROM_EMAIL ?? 'Автошкола <onboarding@resend.dev>';
@@ -136,7 +141,7 @@ async function sendLessonReminders() {
         // ── Email to student ──
         if (studentEmail) {
             try {
-                await resend.emails.send({
+                await getResend().emails.send({
                     from: FROM,
                     to: studentEmail,
                     subject: `Напомняне: Урок утре в ${fmtTime(lesson.start_time)} с ${instructorName}`,
@@ -157,7 +162,7 @@ async function sendLessonReminders() {
         // ── Email to instructor ──
         if (instructorEmail) {
             try {
-                await resend.emails.send({
+                await getResend().emails.send({
                     from: FROM,
                     to: instructorEmail,
                     subject: `Напомняне: Урок с ${studentName} утре в ${fmtTime(lesson.start_time)}`,

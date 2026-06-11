@@ -21,6 +21,9 @@ const PAGE_TITLES: Record<string, string> = {
   '/instructor/chat':   'Съобщения',
   '/student/ai':        'AI Асистент',
   '/student/exam':      'Симулация на изпит',
+  '/admin/map':         'Карта на местата',
+  '/instructor/map':    'Карта на местата',
+  '/student/map':       'Карта на местата',
 };
 
 const ROLE_LABELS: Record<UserRole, string> = {
