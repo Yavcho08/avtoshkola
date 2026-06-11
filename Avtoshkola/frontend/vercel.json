@@ -1,4 +1,5 @@
 {
+  "alias": ["avtoshkola-bg.vercel.app"],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

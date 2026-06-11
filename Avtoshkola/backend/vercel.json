@@ -1,4 +1,5 @@
 {
+  "alias": ["avtoshkola-bg-api.vercel.app"],
   "version": 2,
   "builds": [
     {
