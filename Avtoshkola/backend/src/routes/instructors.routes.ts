@@ -7,7 +7,8 @@ const router = Router();
 
 router.use(authenticate);
 
-router.get('/',   requireAdmin,              wrap(instructors.list));
+// Всеки логнат потребител може да види списъка (курсистите го ползват за заявка на урок)
+router.get('/',   wrap(instructors.list));
 router.post('/',  requireAdmin,              wrap(instructors.create));
 
 // Self-access enforced in controller for instructor role

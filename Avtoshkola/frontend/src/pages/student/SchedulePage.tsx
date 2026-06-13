@@ -62,19 +62,22 @@ export default function StudentSchedulePage() {
 
   const load = async () => {
     setIsLoading(true);
+    // Занятията и инструкторите се зареждат независимо — провал на едното
+    // не бива да изпразва календара.
     try {
-      const [lessonsRes, instructorsRes] = await Promise.all([
-        lessonsApi.list({ limit: 500 }),
-        instructorsApi.list({ limit: 100, is_active: true }),
-      ]);
+      const lessonsRes = await lessonsApi.list({ limit: 500 });
       setLessons(lessonsRes.data);
+    } catch { /* при грешка календарът остава празен, но без да блокира */ }
+
+    try {
+      const instructorsRes = await instructorsApi.list({ limit: 100, is_active: true });
       setInstructors(instructorsRes.data);
       if (instructorsRes.data.length > 0) {
         setForm(f => ({ ...f, instructor_id: instructorsRes.data[0].id }));
       }
-    } finally {
-      setIsLoading(false);
-    }
+    } catch { /* списъкът за заявка може да липсва, но графикът пак се вижда */ }
+
+    setIsLoading(false);
   };
 
   useEffect(() => { void load(); }, []);
