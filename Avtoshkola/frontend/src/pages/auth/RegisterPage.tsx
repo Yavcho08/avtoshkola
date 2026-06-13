@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { Link, useNavigate, Navigate } from 'react-router-dom';
+import { Link, useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { apiClient } from '../../api/client';
 import { Input } from '../../components/common/Input';
@@ -8,6 +8,7 @@ import { Button } from '../../components/common/Button';
 export default function RegisterPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -15,6 +16,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [referralCode, setReferralCode] = useState((searchParams.get('ref') ?? '').toUpperCase());
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -68,6 +70,7 @@ export default function RegisterPage() {
         first_name: firstName,
         last_name: lastName,
         phone: phone || undefined,
+        referral_code: referralCode.trim() || undefined,
       });
       setSuccess(true);
     } catch (err: unknown) {
@@ -179,6 +182,21 @@ export default function RegisterPage() {
               autoComplete="new-password"
               required
             />
+
+            <Input
+              label="Реферален код (по избор)"
+              type="text"
+              value={referralCode}
+              onChange={e => setReferralCode(e.target.value.toUpperCase())}
+              placeholder="напр. AB3K9P"
+              maxLength={6}
+            />
+            {referralCode.trim() && (
+              <div className="rounded-lg bg-purple-50 border border-purple-100 p-3 text-xs text-purple-700 flex items-center gap-2">
+                <span>🎁</span>
+                Имаш покана! Ти и приятелят ти получавате 10% отстъпка.
+              </div>
+            )}
 
             <div className="rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-blue-600">
               Регистрацията създава акаунт на курсист. Инструктори и администратори се добавят от системата.

@@ -30,6 +30,7 @@ const studentNav: NavItem[] = [
   { to: '/student/ai',       label: 'AI Асистент', icon: <AiIcon /> },
   { to: '/student/exam',     label: 'Симулация',   icon: <ExamIcon /> },
   { to: '/student/map',      label: 'Карта',       icon: <MapIcon /> },
+  { to: '/student/referral', label: 'Покани приятел', icon: <GiftIcon /> },
 ];
 
 const navByRole: Record<UserRole, NavItem[]> = {
@@ -187,4 +188,7 @@ function ExamIcon() {
 }
 function MapIcon() {
   return <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" /></svg>;
+}
+function GiftIcon() {
+  return <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>;
 }

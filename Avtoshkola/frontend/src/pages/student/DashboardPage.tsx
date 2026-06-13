@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { dashboardApi } from '../../api/dashboard.api';
 import { Badge } from '../../components/common/Badge';
 import { Spinner } from '../../components/common/Spinner';
+import { WeatherChip } from '../../components/WeatherChip';
 import { useAuth } from '../../hooks/useAuth';
 import { LessonWithRelations } from '../../types';
 
@@ -218,6 +219,7 @@ export default function StudentDashboardPage() {
                       <p className="text-xs text-gray-400 font-mono mt-0.5">{l.vehicles.registration_number}</p>
                     )}
                   </div>
+                  {l.type === 'practice' && <WeatherChip startTime={l.start_time} />}
                   <Badge label={l.type} />
                 </div>
               ))}

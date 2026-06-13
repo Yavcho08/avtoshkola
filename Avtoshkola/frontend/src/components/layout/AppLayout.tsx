@@ -24,6 +24,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/admin/map':         'Карта на местата',
   '/instructor/map':    'Карта на местата',
   '/student/map':       'Карта на местата',
+  '/student/referral':  'Покани приятел',
 };
 
 const ROLE_LABELS: Record<UserRole, string> = {

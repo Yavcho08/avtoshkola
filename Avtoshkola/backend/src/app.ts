@@ -59,6 +59,7 @@ import chatRouter from './routes/chat.routes';
 import aiRouter from './routes/ai.routes';
 import examSimRouter from './routes/exam-sim.routes';
 import locationsRouter from './routes/locations.routes';
+import referralsRouter from './routes/referrals.routes';
 
 app.use('/api/auth',        authRouter);
 app.use('/api/students',    studentsRouter);
@@ -77,6 +78,7 @@ app.use('/api/chat',        chatRouter);
 app.use('/api/ai',          aiRouter);
 app.use('/api/exam-sim',    examSimRouter);
 app.use('/api/locations',   locationsRouter);
+app.use('/api/referrals',   referralsRouter);
 
 // ─── 404 Catch-all ────────────────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {

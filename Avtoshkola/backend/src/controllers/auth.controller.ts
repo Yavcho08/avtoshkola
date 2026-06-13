@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { sendSuccess, sendError } from '../utils/response';
+import { recordReferral } from './referrals.controller';
 
 // GET /api/auth/me
 // Returns the authenticated user's profile (already hydrated by authMiddleware).
@@ -11,12 +12,13 @@ export const me = async (req: Request, res: Response): Promise<void> => {
 // POST /api/auth/register
 // Creates a new Supabase auth user + profile row. Role is always 'student' for self-registration.
 export const register = async (req: Request, res: Response): Promise<void> => {
-  const { email, password, first_name, last_name, phone } = req.body as {
+  const { email, password, first_name, last_name, phone, referral_code } = req.body as {
     email?: string;
     password?: string;
     first_name?: string;
     last_name?: string;
     phone?: string;
+    referral_code?: string;
   };
 
   if (!email || !password || !first_name || !last_name) {
@@ -74,6 +76,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     await supabase.auth.admin.deleteUser(authData.user.id);
     sendError(res, `Грешка при създаване на профил: ${profileError.message}`, 500);
     return;
+  }
+
+  // Реферална връзка (по избор) — не блокира регистрацията при грешка
+  if (referral_code?.trim()) {
+    await recordReferral(referral_code, authData.user.id, `${first_name.trim()} ${last_name.trim()}`);
   }
 
   sendSuccess(res, { message: 'Регистрацията е успешна. Можете да влезете в системата.' }, 201);
